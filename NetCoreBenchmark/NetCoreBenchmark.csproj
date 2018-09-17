@@ -6,9 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BlueNetworkSerializer\BlueNetworkSerializer.csproj">
-      <Private>true</Private>
-    </ProjectReference>
+    <ProjectReference Include="..\BlueGenericSerializer\BlueGenericSerializer.csproj" />
   </ItemGroup>
 
 </Project>

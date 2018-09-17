@@ -1,19 +1,20 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using Blue.GenericSerializer;
 
 namespace NetCoreBenchmark
 {
-	[Blue.NetworkSerializable]
+	[GenericSerializable]
 	public class NetworkSerializableClass
 	{
-		[Blue.NetworkSerializable]
+		[GenericSerializable]
 		public long f1 = 1;
-		[Blue.NetworkSerializable]
+		[GenericSerializable]
 		public int f2 = 2;
-		[Blue.NetworkSerializable]
+		[GenericSerializable]
 		public int p1 { get; set; } = 3;
-		[Blue.NetworkSerializable]
+		[GenericSerializable]
 		public int p2 { get; set; } = 4;
 
 		public static Action<BinaryWriter, NetworkSerializableClass> serialize;
@@ -50,7 +51,7 @@ namespace NetCoreBenchmark
 		//This benchmarking should be re-written -- WIP?
 		static void Main(string[] args)
 		{
-			Blue.NetworkSerializer.Initialize();
+			GenericSerializer.Initialize();
 			//Console.ForegroundColor = ConsoleColor.Gray;
 
 			Stopwatch sw = new Stopwatch();

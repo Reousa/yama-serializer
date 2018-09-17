@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28010.2003
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlueNetworkSerializer", "BlueNetworkSerializer\BlueNetworkSerializer.csproj", "{F34C79A8-E420-4157-A28E-F738A9DFEABF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlueGenericSerializer", "BlueGenericSerializer\BlueGenericSerializer.csproj", "{F34C79A8-E420-4157-A28E-F738A9DFEABF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetCoreBenchmark", "NetCoreBenchmark\NetCoreBenchmark.csproj", "{983E44CE-E10C-4EF1-8C2E-DE6BABCD25F1}"
 EndProject
