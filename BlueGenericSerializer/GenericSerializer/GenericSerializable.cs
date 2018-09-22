@@ -1,11 +1,8 @@
 ﻿using System;
 
-namespace Blue
+namespace Blue.GenericSerializer
 {
-	namespace GenericSerializer
-	{
 		public class GenericSerializable : Attribute
 		{
 		}
-	}
 }
