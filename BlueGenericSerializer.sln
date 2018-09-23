@@ -3,9 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28010.2003
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlueGenericSerializer", "BlueGenericSerializer\BlueGenericSerializer.csproj", "{F34C79A8-E420-4157-A28E-F738A9DFEABF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlueGenericSerializer", "BlueGenericSerializer\BlueGenericSerializer.csproj", "{F34C79A8-E420-4157-A28E-F738A9DFEABF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetCoreBenchmark", "NetCoreBenchmark\NetCoreBenchmark.csproj", "{983E44CE-E10C-4EF1-8C2E-DE6BABCD25F1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetCoreBenchmark", "NetCoreBenchmark\NetCoreBenchmark.csproj", "{983E44CE-E10C-4EF1-8C2E-DE6BABCD25F1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FeatureTesting", "FeatureTesting\FeatureTesting.csproj", "{6344820B-40E9-4BCF-BC6D-4A138FBBA134}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,6 +43,18 @@ Global
 		{983E44CE-E10C-4EF1-8C2E-DE6BABCD25F1}.Release|x64.Build.0 = Release|Any CPU
 		{983E44CE-E10C-4EF1-8C2E-DE6BABCD25F1}.Release|x86.ActiveCfg = Release|Any CPU
 		{983E44CE-E10C-4EF1-8C2E-DE6BABCD25F1}.Release|x86.Build.0 = Release|Any CPU
+		{6344820B-40E9-4BCF-BC6D-4A138FBBA134}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6344820B-40E9-4BCF-BC6D-4A138FBBA134}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6344820B-40E9-4BCF-BC6D-4A138FBBA134}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6344820B-40E9-4BCF-BC6D-4A138FBBA134}.Debug|x64.Build.0 = Debug|Any CPU
+		{6344820B-40E9-4BCF-BC6D-4A138FBBA134}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6344820B-40E9-4BCF-BC6D-4A138FBBA134}.Debug|x86.Build.0 = Debug|Any CPU
+		{6344820B-40E9-4BCF-BC6D-4A138FBBA134}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6344820B-40E9-4BCF-BC6D-4A138FBBA134}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6344820B-40E9-4BCF-BC6D-4A138FBBA134}.Release|x64.ActiveCfg = Release|Any CPU
+		{6344820B-40E9-4BCF-BC6D-4A138FBBA134}.Release|x64.Build.0 = Release|Any CPU
+		{6344820B-40E9-4BCF-BC6D-4A138FBBA134}.Release|x86.ActiveCfg = Release|Any CPU
+		{6344820B-40E9-4BCF-BC6D-4A138FBBA134}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
