@@ -54,13 +54,21 @@ namespace Blue.GenericSerializer
 			ParameterExpression writer = Expression.Parameter(typeof(TWriter), "writer");
 			List<Expression> calls = new List<Expression>();
 
-			var fields = typeof(TObject).GetFields().Where(f => f.IsDefined(typeof(GenericSerializable))).OrderBy(f => f.Name).ToArray();
-			var props = typeof(TObject).GetProperties().Where(p => p.IsDefined(typeof(GenericSerializable))).OrderBy(p => p.Name).ToArray();
+			var objectType = typeof(TObject);
+
+			var fields = GetFields(objectType);
+			var props = GetProperties(objectType);
 
 			foreach (var prop in props)
-				calls.Add(Expression.Call(writer, "Write", null, Expression.Property(instance, prop)));
+			{
+				if(prop.PropertyType.IsPrimitive || prop.PropertyType == typeof(decimal) || prop.PropertyType == typeof(string))
+					calls.Add(Expression.Call(writer, "Write", null, Expression.Property(instance, prop)));
+			}
 			foreach (var field in fields)
-				calls.Add(Expression.Call(writer, "Write", null, Expression.Field(instance, field)));
+			{
+				if (field.FieldType.IsPrimitive || field.FieldType == typeof(decimal) || field.FieldType == typeof(string))
+					calls.Add(Expression.Call(writer, "Write", null, Expression.Field(instance, field)));
+			}
 
 			Expression block = Expression.Block(
 				calls
@@ -105,6 +113,32 @@ namespace Blue.GenericSerializer
 
 			Expression<Action<TReader, TObject>> lambda = Expression.Lambda<Action<TReader, TObject>>(block, reader, instance);
 			return lambda.Compile();
+		}
+
+		static FieldInfo[] GetFields(Type objectType)
+		{
+			GenericSerializable gsAttribute = (GenericSerializable)objectType.GetCustomAttribute(typeof(GenericSerializable));
+			if (!gsAttribute.Default)
+			{
+				return objectType.GetFields(gsAttribute.Flags).OrderBy(f => f.Name).ToArray();
+			}
+			else
+			{
+				return objectType.GetFields().Where(f => f.IsDefined(typeof(GenericSerializable))).OrderBy(f => f.Name).ToArray();
+			}
+		}
+
+		static PropertyInfo[] GetProperties(Type objectType)
+		{
+			GenericSerializable gsAttribute = (GenericSerializable)objectType.GetCustomAttribute(typeof(GenericSerializable));
+			if (!gsAttribute.Default)
+			{
+				return objectType.GetProperties(gsAttribute.Flags).OrderBy(f => f.Name).ToArray();
+			}
+			else
+			{
+				return objectType.GetProperties().Where(f => f.IsDefined(typeof(GenericSerializable))).OrderBy(f => f.Name).ToArray();
+			}
 		}
 	}
 
