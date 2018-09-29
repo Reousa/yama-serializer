@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -54,13 +55,22 @@ namespace Blue.GenericSerializer
 			ParameterExpression writer = Expression.Parameter(typeof(TWriter), "writer");
 			List<Expression> calls = new List<Expression>();
 
-			var fields = typeof(TObject).GetFields().Where(f => f.IsDefined(typeof(GenericSerializable))).OrderBy(f => f.Name).ToArray();
-			var props = typeof(TObject).GetProperties().Where(p => p.IsDefined(typeof(GenericSerializable))).OrderBy(p => p.Name).ToArray();
+			var objectType = typeof(TObject);
+
+			var fields = ExpressionBuilder.GetFields(objectType);
+			var props = ExpressionBuilder.GetProperties(objectType);
+
+			foreach (var field in fields)
+			{
+				calls.Add(
+					ExpressionBuilder.GenerateWriteCalls(field, writer, instance));
+			}
 
 			foreach (var prop in props)
-				calls.Add(Expression.Call(writer, "Write", null, Expression.Property(instance, prop)));
-			foreach (var field in fields)
-				calls.Add(Expression.Call(writer, "Write", null, Expression.Field(instance, field)));
+			{
+				calls.Add(
+					ExpressionBuilder.GenerateWriteCalls(prop, writer, instance));
+			}
 
 			Expression block = Expression.Block(
 				calls
@@ -82,22 +92,18 @@ namespace Blue.GenericSerializer
 			ParameterExpression reader = Expression.Parameter(typeof(TReader), "writer");
 			List<Expression> calls = new List<Expression>();
 
-			var fields = typeof(TObject).GetFields().Where(f => f.IsDefined(typeof(GenericSerializable))).OrderBy(f => f.Name).ToArray();
-			var props = typeof(TObject).GetProperties().Where(p => p.IsDefined(typeof(GenericSerializable))).OrderBy(p => p.Name).ToArray();
+			var objectType = typeof(TObject);
 
-			foreach (var prop in props)
-				calls.Add(
-					Expression.Assign(
-						Expression.Property(instance, prop),
-						Expression.Call(reader, "Read" + prop.PropertyType.Name, null, null)
-					));
+			var fields = ExpressionBuilder.GetFields(objectType);
+			var props = ExpressionBuilder.GetProperties(objectType);
 
 			foreach (var field in fields)
 				calls.Add(
-					Expression.Assign(
-						Expression.Field(instance, field),
-						Expression.Call(reader, "Read" + field.FieldType.Name, null, null)
-					));
+						ExpressionBuilder.GenerateReadCalls(field, reader, instance));
+
+			foreach (var prop in props)
+				calls.Add(
+					ExpressionBuilder.GenerateReadCalls(prop, reader, instance));
 
 			Expression block = Expression.Block(
 				calls
@@ -106,6 +112,7 @@ namespace Blue.GenericSerializer
 			Expression<Action<TReader, TObject>> lambda = Expression.Lambda<Action<TReader, TObject>>(block, reader, instance);
 			return lambda.Compile();
 		}
-	}
 
+
+	}
 }
