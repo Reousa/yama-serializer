@@ -5,9 +5,9 @@ VisualStudioVersion = 15.0.28010.2003
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlueGenericSerializer", "BlueGenericSerializer\BlueGenericSerializer.csproj", "{F34C79A8-E420-4157-A28E-F738A9DFEABF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetCoreBenchmark", "NetCoreBenchmark\NetCoreBenchmark.csproj", "{983E44CE-E10C-4EF1-8C2E-DE6BABCD25F1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Benchmark", "NetCoreBenchmark\Benchmark.csproj", "{983E44CE-E10C-4EF1-8C2E-DE6BABCD25F1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FeatureTesting", "FeatureTesting\FeatureTesting.csproj", "{6344820B-40E9-4BCF-BC6D-4A138FBBA134}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FeatureTesting", "FeatureTesting\FeatureTesting.csproj", "{6344820B-40E9-4BCF-BC6D-4A138FBBA134}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
