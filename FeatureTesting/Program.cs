@@ -11,7 +11,7 @@ namespace FeatureTesting
 {
 	public class Vector2
 	{
-		public float x, y, test;
+		public float x, y;
 
 		public Vector2(float x, float y)
 		{
@@ -21,9 +21,8 @@ namespace FeatureTesting
 	}
 	public class Vector3
 	{
-		public float magnitude, normalized, sqrMagnitude = 2;
-		public new float x, y, z = 0;
-
+		public float magnitude, normalized, sqrMagnitude;
+		public float x, y, z;
 
 		public Vector3(float x, float y, float z)
 		{
@@ -33,7 +32,7 @@ namespace FeatureTesting
 		}
 	}
 
-	[GenericSerializable(SerializePublic: true)]
+	[GenericSerializable(true, false, false)]
 	public class TestSerializable : IGenericSerializable<BinaryReader, BinaryWriter>
 	{
 		public static Action<BinaryWriter, TestSerializable> serialize;
@@ -41,9 +40,13 @@ namespace FeatureTesting
 
 		public int[] array1 = new int[6] { 1, 2, 3, 4, 5, 6 };
 
-		//public int[] array12 { get; set; } = new int[7] { 11, 12, 13, 14, 15, 16, 17 };
+		[GenericSerializable(new[] { "x", "y", "z" }, true, false, false)]
+		public Vector3[] array2 = new Vector3[3] { new Vector3(1, 2, 3), new Vector3(3, 4, 3), new Vector3(4, 5, 3) };
 
 		public List<int> list1 = new List<int>() { 5, 6, 33, 4 };
+
+		[GenericSerializable(new[] { "x", "y", "z" }, true, false, false)]
+		public List<Vector3> list2 = new List<Vector3>() { new Vector3(1, 2, 3), new Vector3(3, 4, 3), new Vector3(4, 5, 3) };
 
 		public bool var0 = false;
 		public byte var1 = 1;
@@ -58,9 +61,9 @@ namespace FeatureTesting
 		public double var10 = 10.55;
 		public decimal var11 = 11;
 		public char var12 = 'a';
+		public string var13 = "5568";
 
-		[GenericSerializable(new[] { "x", "y", "z" }, true)]
-		public Vector3 vector3 = new Vector3(5, 5, 5);
+		Vector3 vector3 = new Vector3(0, 0, 0);
 
 		public void Serialize(BinaryWriter writer)
 		{
@@ -81,14 +84,19 @@ namespace FeatureTesting
 				array1[i] = rnd.Next(0, 200);
 			}
 
-			//for (int i = 0; i < array12.Length; i++)
-			//{
-			//	array12[i] = rnd.Next(0, 200);
-			//}
+			for (int i = 0; i < array2.Length; i++)
+			{
+				array2[i] = new Vector3(rnd.Next(), rnd.Next(), rnd.Next());
+			}
 
 			for (int i = 0; i < list1.Count; i++)
 			{
 				list1[i] = rnd.Next(0, 200);
+			}
+
+			for (int i = 0; i < list2.Count; i++)
+			{
+				list2[i] = new Vector3(rnd.Next(0, 200), rnd.Next(0, 1000), rnd.Next(0, 1000));
 			}
 
 			var1 = (byte)rnd.Next(0, 200);
@@ -103,10 +111,9 @@ namespace FeatureTesting
 			var10 = (byte)rnd.Next(0, 200);
 			var11 = (byte)rnd.Next(0, 200);
 			var12 = (char)rnd.Next(0, 200);
+			var13 = rnd.Next().ToString();
 
-			vector3.x = rnd.Next(0, 200);
-			vector3.y = rnd.Next(0, 200);
-			vector3.z = rnd.Next(0, 200);
+			vector3 = new Vector3(rnd.Next(0, 200), rnd.Next(0, 1000), rnd.Next(0, 1000));
 		}
 
 		public void DirectDeserialize(BinaryReader br)
@@ -116,15 +123,25 @@ namespace FeatureTesting
 				array1[i] = br.ReadInt32();
 			}
 
-			//for (int i = 0; i < array12.Length; i++)
-			//{
-			//	array12[i] = br.ReadInt32();
-			//}
+			for (int i = 0; i < array2.Length; i++)
+			{
+				array2[i].x = br.ReadSingle();
+				array2[i].y = br.ReadSingle();
+				array2[i].z = br.ReadSingle();
+			}
 
 			for (int i = 0; i < list1.Count; i++)
 			{
 				list1[i] = br.ReadInt32();
 			}
+
+			for (int i = 0; i < list2.Count; i++)
+			{
+				list2[i].x = br.ReadSingle();
+				list2[i].y = br.ReadSingle();
+				list2[i].z = br.ReadSingle();
+			}
+
 			var0 = br.ReadBoolean();
 			var1 = br.ReadByte();
 			var2 = br.ReadSByte();
@@ -138,6 +155,7 @@ namespace FeatureTesting
 			var10 = br.ReadDouble();
 			var11 = br.ReadDecimal();
 			var12 = br.ReadChar();
+			var13 = br.ReadString();
 
 			vector3.x = br.ReadSingle();
 			vector3.y = br.ReadSingle();
@@ -151,14 +169,23 @@ namespace FeatureTesting
 				bw.Write(array1[i]);
 			}
 
-			//for (int i = 0; i < array12.Length; i++)
-			//{
-			//	bw.Write(array12[i]);
-			//}
+			for (int i = 0; i < array2.Length; i++)
+			{
+				bw.Write(array2[i].x);
+				bw.Write(array2[i].y);
+				bw.Write(array2[i].z);
+			}
 
 			for (int i = 0; i < list1.Count; i++)
 			{
 				bw.Write(list1[i]);
+			}
+
+			for (int i = 0; i < list2.Count; i++)
+			{
+				bw.Write(list2[i].x);
+				bw.Write(list2[i].y);
+				bw.Write(list2[i].z);
 			}
 
 			bw.Write(var0);
@@ -174,6 +201,7 @@ namespace FeatureTesting
 			bw.Write(var10);
 			bw.Write(var11);
 			bw.Write(var12);
+			bw.Write(var13);
 
 			bw.Write(vector3.x);
 			bw.Write(vector3.y);
@@ -183,15 +211,6 @@ namespace FeatureTesting
 
 	class Program
 	{
-		static int[] test(int[] arr)
-		{
-			int[] array = new int[arr.Length];
-			for (int i = 0; i < arr.Length; i++)
-				array[i] = arr[i];
-
-			return array;
-		}
-
 		static void Main(string[] args)
 		{
 			Stopwatch sw = new Stopwatch();
@@ -210,30 +229,14 @@ namespace FeatureTesting
 			TestSerializable fieldTest = new TestSerializable();
 			TestSerializable randomValues = new TestSerializable();
 
-			//ArraySerializationTest<int>.GenerateTest();
-			//var e = ArraySerializationTest<int>.test(new int[] { 1,2,3,4,5,6 });
-			//randomValues.Serialize(bw);
-			//stream.Position = 0;
-
 			randomValues.GenerateRandomValues();
-			randomValues.var0 = true;
 			randomValues.Serialize(bw);
 			stream.Position = 0;
 
-
-			Action<BinaryWriter> test = fieldTest.DirectSerialize;
-
-
-
 			fieldTest.Deserialize(br);
-			//fieldTest.DirectSerialize(bw);
-			stream.Position = 0;
-
-			fieldTest.DirectDeserialize(br);
 			stream.Position = 0;
 
 			Console.ReadKey();
-			
 		}
 	}
 }
