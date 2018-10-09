@@ -1,21 +1,23 @@
 # Blue's Generic Serializer
 
-A general purpose automatic serializer that performs just as fast as manual serialization, at the expense of initial load time.
+A general purpose automatic data serializer that performs just as fast as manual serialization, at the expense of initial load time.
+It is made with `Game Networking` as the main use case, but can be used for other things as well.
 
-It is made with `Networking` as the main use case, but can be used for other things as well.
+The goal is to eliminate the possibility of human error & to boost productivity by cutting down on development time.
 
-The goal is to eliminate the possibility of human error & to boost productivity.
+It is built using C#'s `System.Linq.Expression` & `Sytem.Reflection` libraries, is AOT and .NET Standard 2.0 compliant.
 
 *Disclaimer: This is still work in progress, it is considered to be in a `PRE-ALPHA` state. Some core features may not yet exist or be broken.*
 
-## Feature List
+## Core Feature List
 
-##### Serialization Options
-- [x] Selective serialization - filter specific members to be serialized.
+#### Serialization Options
+- [x] Selective serialization - simple inheritance chains.
+- [ ] Selective serialization - extended inheritance chains.
 - [x] Instance member serialization
 - [ ] Static member serialization
 
-##### Type Serialization
+#### Type Serialization
 - [x] Primitive type member serialization.
 - [x] Class type member serialization.
 - [x] Primitive type based 1-dimension array & list serialization
@@ -42,7 +44,7 @@ The goal is to eliminate the possibility of human error & to boost productivity.
 ### Prerequisites
 
 * Visual Studio 2017
-* .NET Standard 2.0 equivalent framework.
+* .NET Standard 2.0 compliant framework.
 
 
 ## Contributing
@@ -63,4 +65,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Acknowledgments
 
-I would specifically like to thank [Michael Kelly](https://github.com/Michael-Kelley) for being the amazing friend & mentor that he is.
+- I would specifically like to thank [Michael Kelly](https://github.com/Michael-Kelley) for being the amazing friend & mentor that he is.
+- Thanks to Google, Stackoverflow, Brilliant.org & the various book authors who've made knowledge & self-teaching accessible in the recent years.

@@ -31,6 +31,15 @@ namespace Blue.GenericSerializer
 		public readonly string[] MemberNames;
 
 		/// <summary>
+		/// Using this means you MUST add [GenericSerializable] to the members you want to serialize.
+		/// DO NOT USE THIS for class/struct type members!
+		/// </summary>
+		public GenericSerializable()
+		{
+			this.DefaultOptions = true;
+		}
+
+		/// <summary>
 		/// Allows you to specify your own binding flags for serialization. 
 		/// </summary>
 		/// <param name="Flags">Binding Flags</param>
