@@ -6,20 +6,43 @@ It is made with `Networking` as the main use case, but can be used for other thi
 
 The goal is to eliminate the possibility of human error & to boost productivity.
 
-*Disclaimer: This is still work in progress, it is considered to be in a `PRE-ALPHA` state.*
+*Disclaimer: This is still work in progress, it is considered to be in a `PRE-ALPHA` state. Some core features may not yet exist or be broken.*
+
+## Feature List
+
+##### Serialization Options
+- [x] Selective serialization - filter specific members to be serialized.
+- [x] Instance member serialization
+- [ ] Static member serialization
+
+##### Type Serialization
+- [x] Primitive type member serialization.
+- [x] Class type member serialization.
+- [x] Primitive type based 1-dimension array & list serialization
+- [x] Class type based 1-dimension array & list serialization.
+- [ ] Multi dimension array & list serialization.
+- [ ] Dictionary serialization.
+- [ ] Struct serialization.
 
 
 ## Getting Started
 
 1. Clone or download.
 2. Build `BlueGenericSerializer` or reference it in your project directly.
-3. Add the attribute `[GenericSerializable(options)]` to your serializable type.
-4. Done!
+3. Add the attribute `[GenericSerializable(options)]` to your serializable class.
+4. Add the following delegates to your class:
+	1. `public static Action<WriterType, ClassType> serialize;` [#17](https://github.com/Reousa/BlueGenericSerializer/issues/17)
+	2. `public static Action<ReaderType, ClassType> deserialize;` [#17](https://github.com/Reousa/BlueGenericSerializer/issues/17)
+5. Call `GenericSerializer.Initialize();`.
+6. Call `ClassType.serialize(WriterInstance, ClassTypeInstance);` to serialize.
+7. Done!
+
+*More info to be added through docs.*
 
 ### Prerequisites
 
 * Visual Studio 2017
-* .NET Standard 2.0 or equivalent framework.
+* .NET Standard 2.0 equivalent framework.
 
 
 ## Contributing
@@ -28,7 +51,7 @@ You may contribute through issues & pull requests. (WIP)
 
 ## Versioning
 
-We use [SemVer](http://semver.org/). (WIP)
+[SemVer](http://semver.org/). (WIP)
 
 ## Authors
 
@@ -40,4 +63,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Acknowledgments
 
-I would specifically like to thank [Michael Kelly](https://github.com/Michael-Kelley) for being the amazing mentor that he is.
+I would specifically like to thank [Michael Kelly](https://github.com/Michael-Kelley) for being the amazing friend & mentor that he is.
