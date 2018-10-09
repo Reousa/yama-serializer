@@ -9,10 +9,10 @@ namespace Benchmark
 	class Program
 	{
 		//This benchmarking should be re-written -- WIP?
+		//Ignore the first run, use results from the second run onwards.
 		static void Main(string[] args)
 		{
 			GenericSerializer.Initialize();
-			//Console.ForegroundColor = ConsoleColor.Gray;
 
 			Stopwatch sw = new Stopwatch();
 			var TestClass = new TestSerializable();
@@ -75,7 +75,6 @@ namespace Benchmark
 						sw.Start();
 						for (int i = 0; i < iterationsPerClass; i++)
 						{
-							//TestClass.Serialize(bw);
 							TestSerializable.serialize(bw, TestClass);
 						}
 						sw.Stop();
@@ -94,8 +93,6 @@ namespace Benchmark
 						sw.Start();
 						for (int i = 0; i < iterationsPerClass; i++)
 						{
-							//NetworkSerializableClass.deserialize(br, TestClass);
-							//TestClass.Deserialize(br);
 							TestSerializable.deserialize(br, TestClass);
 						}
 						sw.Stop();
@@ -107,6 +104,8 @@ namespace Benchmark
 					Console.WriteLine(String.Format("Method: Generic Deserialization. Iterations: {0} averaged over {1} iterations. Average time: {2}", iterationsPerClass, iterationsToAverage, new TimeSpan(averageTime)));
 
 					averageTime = 0;
+					bw.Flush();
+					stream.Flush();
 				}
 			}
 		}

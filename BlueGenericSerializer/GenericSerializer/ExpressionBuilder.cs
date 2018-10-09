@@ -9,9 +9,10 @@ namespace Blue.GenericSerializer
 {
 	public static class ExpressionBuilder
 	{
-		public static FieldInfo[] GetFields(Type objectType)
+		public static FieldInfo[] GetFields(Type objectType, GenericSerializable gsAttribute = null)
 		{
-			GenericSerializable gsAttribute = (GenericSerializable)objectType.GetCustomAttribute(typeof(GenericSerializable));
+			if(gsAttribute == null)
+				gsAttribute = (GenericSerializable)objectType.GetCustomAttribute(typeof(GenericSerializable));
 			//If this is null, it means the class holding a variable of this type is marked as "SerializeAllPublic"
 			//Thus; serialize all publics in the type's member aswell.
 			if (gsAttribute == null)
@@ -33,9 +34,10 @@ namespace Blue.GenericSerializer
 					.OrderBy(f => f.Name).ToArray();
 		}
 
-		public static FieldInfo[] GetFields(FieldInfo field)
+		public static FieldInfo[] GetFields(FieldInfo field, GenericSerializable gsAttribute = null)
 		{
-			GenericSerializable gsAttribute = (GenericSerializable)field.GetCustomAttribute(typeof(GenericSerializable));
+			if(gsAttribute == null)
+				gsAttribute = (GenericSerializable)field.GetCustomAttribute(typeof(GenericSerializable));
 			//If this is null, it means the class holding a variable of this type is marked as "SerializeAllPublic"
 			//Thus; serialize all publics in the type's member aswell.
 			if (gsAttribute == null)
@@ -57,9 +59,10 @@ namespace Blue.GenericSerializer
 					.OrderBy(f => f.Name).ToArray();
 		}
 
-		public static FieldInfo[] GetFields(PropertyInfo prop)
+		public static FieldInfo[] GetFields(PropertyInfo prop, GenericSerializable gsAttribute = null)
 		{
-			GenericSerializable gsAttribute = (GenericSerializable)prop.GetCustomAttribute(typeof(GenericSerializable));
+			if(gsAttribute == null)
+				gsAttribute = (GenericSerializable)prop.GetCustomAttribute(typeof(GenericSerializable));
 			//If this is null, it means the class holding a variable of this type is marked as "SerializeAllPublic"
 			//Thus; serialize all publics in the type's member aswell.
 			if (gsAttribute == null)
@@ -81,9 +84,10 @@ namespace Blue.GenericSerializer
 					.OrderBy(f => f.Name).ToArray();
 		}
 
-		public static PropertyInfo[] GetProperties(Type objectType)
+		public static PropertyInfo[] GetProperties(Type objectType, GenericSerializable gsAttribute = null)
 		{
-			GenericSerializable gsAttribute = (GenericSerializable)objectType.GetCustomAttribute(typeof(GenericSerializable));
+			if(gsAttribute == null)
+				gsAttribute = (GenericSerializable)objectType.GetCustomAttribute(typeof(GenericSerializable));
 			//If this is null, it means the class holding a variable of this type is marked as "SerializeAllPublic"
 			//Thus; serialize all publics in the type's member aswell.
 			if (gsAttribute == null)
@@ -105,9 +109,10 @@ namespace Blue.GenericSerializer
 					.OrderBy(p => p.Name).ToArray();
 		}
 
-		public static PropertyInfo[] GetProperties(FieldInfo field)
+		public static PropertyInfo[] GetProperties(FieldInfo field, GenericSerializable gsAttribute = null)
 		{
-			GenericSerializable gsAttribute = (GenericSerializable)field.GetCustomAttribute(typeof(GenericSerializable));
+			if(gsAttribute == null)
+				gsAttribute = (GenericSerializable)field.GetCustomAttribute(typeof(GenericSerializable));
 			//If this is null, it means the class holding a variable of this type is marked as "SerializeAllPublic"
 			//Thus; serialize all publics in the type's member aswell.
 			if (gsAttribute == null)
@@ -129,9 +134,10 @@ namespace Blue.GenericSerializer
 					OrderBy(p => p.Name).ToArray();
 		}
 
-		public static PropertyInfo[] GetProperties(PropertyInfo prop)
+		public static PropertyInfo[] GetProperties(PropertyInfo prop, GenericSerializable gsAttribute = null)
 		{
-			GenericSerializable gsAttribute = (GenericSerializable)prop.GetCustomAttribute(typeof(GenericSerializable));
+			if(gsAttribute == null)
+				gsAttribute = (GenericSerializable)prop.GetCustomAttribute(typeof(GenericSerializable));
 			//If this is null, it means the class holding a variable of this type is marked as "SerializeAllPublic"
 			//Thus; serialize all publics in the type's member aswell.
 			if (gsAttribute == null)
@@ -175,7 +181,7 @@ namespace Blue.GenericSerializer
 			{
 				return WriteList(field, writer, instance);
 			}
-			else if (type.IsClass)
+			else if (type.IsClass && !type.IsArray && !type.IsEnum)
 			{
 				List<Expression> calls = new List<Expression>();
 				foreach (var innerField in GetFields(field))
@@ -209,7 +215,7 @@ namespace Blue.GenericSerializer
 			{
 				return WriteList(prop, writer, instance);
 			}
-			else if (type.IsClass)
+			else if (type.IsClass && !type.IsArray && !type.IsEnum)
 			{
 				List<Expression> calls = new List<Expression>();
 				foreach (var innerField in GetFields(prop))
@@ -253,7 +259,7 @@ namespace Blue.GenericSerializer
 			{
 				return ReadList(field, reader, instance);
 			}
-			else if (type.IsClass)
+			else if (type.IsClass && !type.IsArray && !type.IsEnum)
 			{
 				List<Expression> calls = new List<Expression>();
 				foreach (var innerField in GetFields(field))
@@ -291,7 +297,7 @@ namespace Blue.GenericSerializer
 			{
 				return ReadList(prop, reader, instance);
 			}
-			else if (type.IsClass)
+			else if (type.IsClass && !type.IsArray && !type.IsEnum)
 			{
 				List<Expression> calls = new List<Expression>();
 				foreach (var innerField in GetFields(prop))
@@ -312,6 +318,7 @@ namespace Blue.GenericSerializer
 		}
 
 		#region ARRAYS
+
 		/// <summary>
 		/// Generates Array writing code.
 		/// </summary>
@@ -324,6 +331,10 @@ namespace Blue.GenericSerializer
 			var itemType = array.FieldType.GetElementType();
 			if (itemType.IsPrimitive || itemType == typeof(decimal) || itemType == typeof(string))
 				return WriteArrayPrimitive(array, writer, instance);
+
+			else if (itemType.IsClass && !itemType.IsArray && !itemType.IsEnum)
+				return WriteArrayClass(array, writer, instance);
+			
 			else
 				return Expression.Empty();
 		}
@@ -333,6 +344,10 @@ namespace Blue.GenericSerializer
 			var itemType = array.PropertyType.GetElementType();
 			if (itemType.IsPrimitive || itemType == typeof(decimal) || itemType == typeof(string))
 				return WriteArrayPrimitive(array, writer, instance);
+
+			else if (itemType.IsClass && !itemType.IsArray && !itemType.IsEnum)
+				return WriteArrayClass(array, writer, instance);
+
 			else
 				return Expression.Empty();
 		}
@@ -342,6 +357,10 @@ namespace Blue.GenericSerializer
 			var itemType = array.FieldType.GetElementType();
 			if (itemType.IsPrimitive || itemType == typeof(decimal) || itemType == typeof(string))
 				return ReadArrayPrimitive(array, reader, instance);
+
+			else if (itemType.IsClass && !itemType.IsArray && !itemType.IsEnum)
+				return ReadArrayClass(array, reader, instance);
+
 			else
 				return Expression.Empty();
 		}
@@ -351,6 +370,10 @@ namespace Blue.GenericSerializer
 			var itemType = array.PropertyType.GetElementType();
 			if (itemType.IsPrimitive || itemType == typeof(decimal) || itemType == typeof(string))
 				return ReadArrayPrimitive(array, reader, instance);
+
+			else if (itemType.IsClass && !itemType.IsArray && !itemType.IsEnum)
+				return ReadArrayClass(array, reader, instance);
+
 			else
 				return Expression.Empty();
 		}
@@ -463,6 +486,154 @@ namespace Blue.GenericSerializer
 			return block;
 		}
 
+		private static Expression WriteArrayClass(FieldInfo array, Expression writer, Expression instance)
+		{
+			var arr = Expression.Field(instance, array);
+			var counter = Expression.Variable(typeof(int), "counter");
+			var breakLabel = Expression.Label("breakLabel");
+			Expression.Assign(counter, Expression.Constant(0));
+
+			var attribute = (GenericSerializable)array.GetCustomAttribute(typeof(GenericSerializable));
+			var elementType = array.FieldType.GetElementType();
+
+			var fields = GetFields(elementType, attribute);
+			var props = GetProperties(elementType, attribute);
+
+			List<Expression> calls = new List<Expression>();
+			calls.AddRange(fields.Select((f, index) => GenerateWriteCalls(f, writer, Expression.ArrayAccess(arr, counter))));
+			calls.AddRange(props.Select((p, index) => GenerateWriteCalls(p, writer, Expression.ArrayAccess(arr, counter))));
+
+			var block = Expression.Block(
+				new[] { counter },
+				Expression.Loop(
+					Expression.IfThenElse(
+						Expression.LessThan(counter, Expression.ArrayLength(arr)),
+						Expression.Block(
+							Expression.Block(
+								calls
+							),
+							Expression.PostIncrementAssign(counter)
+						),
+						Expression.Break(breakLabel)
+					),
+					breakLabel
+				)
+			);
+
+			return block;
+		}
+
+		private static Expression WriteArrayClass(PropertyInfo array, Expression writer, Expression instance)
+		{
+			var arr = Expression.Property(instance, array);
+			var counter = Expression.Variable(typeof(int), "counter");
+			var breakLabel = Expression.Label("breakLabel");
+			Expression.Assign(counter, Expression.Constant(0));
+
+			var attribute = (GenericSerializable)array.GetCustomAttribute(typeof(GenericSerializable));
+			var elementType = array.PropertyType.GetElementType();
+
+			var fields = GetFields(elementType, attribute);
+			var props = GetProperties(elementType, attribute);
+
+			List<Expression> calls = new List<Expression>();
+			calls.AddRange(fields.Select((f, index) => GenerateWriteCalls(f, writer, Expression.ArrayAccess(arr, counter))));
+			calls.AddRange(props.Select((p, index) => GenerateWriteCalls(p, writer, Expression.ArrayAccess(arr, counter))));
+
+			var block = Expression.Block(
+				new[] { counter },
+				Expression.Loop(
+					Expression.IfThenElse(
+						Expression.LessThan(counter, Expression.ArrayLength(arr)),
+						Expression.Block(
+							Expression.Block(
+								calls
+							),
+							Expression.PostIncrementAssign(counter)
+						),
+						Expression.Break(breakLabel)
+					),
+					breakLabel
+				)
+			);
+
+			return block;
+		}
+
+		private static Expression ReadArrayClass(FieldInfo array, Expression writer, Expression instance)
+		{
+			var arr = Expression.Field(instance, array);
+			var counter = Expression.Variable(typeof(int), "counter");
+			var breakLabel = Expression.Label("breakLabel");
+			Expression.Assign(counter, Expression.Constant(0));
+
+			var attribute = (GenericSerializable)array.GetCustomAttribute(typeof(GenericSerializable));
+			var elementType = array.FieldType.GetElementType();
+
+			var fields = GetFields(elementType, attribute);
+			var props = GetProperties(elementType, attribute);
+
+			List<Expression> calls = new List<Expression>();
+			calls.AddRange(fields.Select((f, index) => GenerateReadCalls(f, writer, Expression.ArrayAccess(arr, counter))));
+			calls.AddRange(props.Select((p, index) => GenerateReadCalls(p, writer, Expression.ArrayAccess(arr, counter))));
+
+			var block = Expression.Block(
+				new[] { counter },
+				Expression.Loop(
+					Expression.IfThenElse(
+						Expression.LessThan(counter, Expression.ArrayLength(arr)),
+						Expression.Block(
+							Expression.Block(
+								calls
+							),
+							Expression.PostIncrementAssign(counter)
+						),
+						Expression.Break(breakLabel)
+					),
+					breakLabel
+				)
+			);
+
+			return block;
+		}
+
+		private static Expression ReadArrayClass(PropertyInfo array, Expression writer, Expression instance)
+		{
+			var arr = Expression.Property(instance, array);
+			var counter = Expression.Variable(typeof(int), "counter");
+			var breakLabel = Expression.Label("breakLabel");
+			Expression.Assign(counter, Expression.Constant(0));
+
+			var attribute = (GenericSerializable)array.GetCustomAttribute(typeof(GenericSerializable));
+			var elementType = array.PropertyType.GetElementType();
+
+			var fields = GetFields(elementType, attribute);
+			var props = GetProperties(elementType, attribute);
+
+			List<Expression> calls = new List<Expression>();
+			calls.AddRange(fields.Select((f, index) => GenerateReadCalls(f, writer, Expression.ArrayAccess(arr, counter))));
+			calls.AddRange(props.Select((p, index) => GenerateReadCalls(p, writer, Expression.ArrayAccess(arr, counter))));
+
+			var block = Expression.Block(
+				new[] { counter },
+				Expression.Loop(
+					Expression.IfThenElse(
+						Expression.LessThan(counter, Expression.ArrayLength(arr)),
+						Expression.Block(
+							Expression.Block(
+								calls
+							),
+							Expression.PostIncrementAssign(counter)
+						),
+						Expression.Break(breakLabel)
+					),
+					breakLabel
+				)
+			);
+
+			return block;
+		}
+		
 		#endregion
 
 		#region LISTS
@@ -472,6 +643,10 @@ namespace Blue.GenericSerializer
 			var itemType = list.FieldType.GetGenericArguments()[0];
 			if (itemType.IsPrimitive || itemType == typeof(decimal) || itemType == typeof(string))
 				return WriteListPrimitive(list, writer, instance);
+
+			else if (itemType.IsClass && !itemType.IsArray && !itemType.IsEnum)
+				return WriteListClass(list, writer, instance);
+
 			else
 				return Expression.Empty();
 		}
@@ -481,6 +656,10 @@ namespace Blue.GenericSerializer
 			var itemType = list.PropertyType.GetGenericArguments()[0];
 			if (itemType.IsPrimitive || itemType == typeof(decimal) || itemType == typeof(string))
 				return WriteListPrimitive(list, writer, instance);
+
+			else if (itemType.IsClass && !itemType.IsArray && !itemType.IsEnum)
+				return WriteListClass(list, writer, instance);
+
 			else
 				return Expression.Empty();
 		}
@@ -490,6 +669,10 @@ namespace Blue.GenericSerializer
 			var itemType = list.FieldType.GetGenericArguments()[0];
 			if (itemType.IsPrimitive || itemType == typeof(decimal) || itemType == typeof(string))
 				return ReadListPrimitive(list, reader, instance);
+
+			else if (itemType.IsClass && !itemType.IsArray && !itemType.IsEnum)
+				return ReadListClass(list, reader, instance);
+
 			else
 				return Expression.Empty();
 		}
@@ -499,13 +682,17 @@ namespace Blue.GenericSerializer
 			var itemType = list.PropertyType.GetGenericArguments()[0];
 			if (itemType.IsPrimitive || itemType == typeof(decimal) || itemType == typeof(string))
 				return ReadListPrimitive(list, reader, instance);
+
+			else if (itemType.IsClass && !itemType.IsArray && !itemType.IsEnum)
+				return ReadListClass(list, reader, instance);
+
 			else
 				return Expression.Empty();
 		}
 
 		private static Expression WriteListPrimitive(FieldInfo list, Expression writer, Expression instance)
 		{
-			var ls = Expression.Field(instance, list);
+			var lst = Expression.Field(instance, list);
 			var counter = Expression.Variable(typeof(int), "counter");
 			var breakLabel = Expression.Label("breakLabel");
 
@@ -517,9 +704,9 @@ namespace Blue.GenericSerializer
 				new[] { counter },
 				Expression.Loop(
 					Expression.IfThenElse(
-						Expression.LessThan(counter, Expression.MakeMemberAccess(ls, count)),
+						Expression.LessThan(counter, Expression.MakeMemberAccess(lst, count)),
 						Expression.Block(
-							Expression.Call(writer, "Write", null, Expression.Property(ls, "Item", counter)),
+							Expression.Call(writer, "Write", null, Expression.Property(lst, "Item", counter)),
 							Expression.PostIncrementAssign(counter)
 						),
 						Expression.Break(breakLabel)
@@ -533,8 +720,7 @@ namespace Blue.GenericSerializer
 
 		private static Expression WriteListPrimitive(PropertyInfo list, Expression writer, Expression instance)
 		{
-			var ls = Expression.Property
-(instance, list);
+			var ls = Expression.Property(instance, list);
 			var counter = Expression.Variable(typeof(int), "counter");
 			var breakLabel = Expression.Label("breakLabel");
 
@@ -607,6 +793,162 @@ namespace Blue.GenericSerializer
 						Expression.LessThan(counter, Expression.MakeMemberAccess(ls, count)),
 						Expression.Block(
 							Expression.Assign(Expression.Property(ls, "Item", counter), Expression.Call(reader, "Read" + itemType.Name, null, null)),
+							Expression.PostIncrementAssign(counter)
+						),
+						Expression.Break(breakLabel)
+					),
+					breakLabel
+				)
+			);
+
+			return block;
+		}
+
+		private static Expression WriteListClass(FieldInfo list, Expression writer, Expression instance)
+		{
+			var lst = Expression.Field(instance, list);
+			var counter = Expression.Variable(typeof(int), "counter");
+			var breakLabel = Expression.Label("breakLabel");
+
+			Expression.Assign(counter, Expression.Constant(0));
+			MemberInfo count = list.FieldType.GetMember("Count")[0];
+
+			var attribute = (GenericSerializable)list.GetCustomAttribute(typeof(GenericSerializable));
+			var elementType = list.FieldType.GetGenericArguments()[0];
+
+			var fields = GetFields(elementType, attribute);
+			var props = GetProperties(elementType, attribute);
+
+			List<Expression> calls = new List<Expression>();
+			calls.AddRange(fields.Select((f, index) => GenerateWriteCalls(f, writer, Expression.Property(lst, "Item", counter))));
+			calls.AddRange(props.Select((p, index) => GenerateWriteCalls(p, writer, Expression.Property(lst, "Item", counter))));
+
+			var block = Expression.Block(
+				new[] { counter },
+				Expression.Loop(
+					Expression.IfThenElse(
+						Expression.LessThan(counter, Expression.MakeMemberAccess(lst, count)),
+						Expression.Block(
+							Expression.Block(
+								calls
+							),
+							Expression.PostIncrementAssign(counter)
+						),
+						Expression.Break(breakLabel)
+					),
+					breakLabel
+				)
+			);
+
+			return block;
+		}
+
+		private static Expression WriteListClass(PropertyInfo list, Expression writer, Expression instance)
+		{
+			var lst = Expression.Property(instance, list);
+			var counter = Expression.Variable(typeof(int), "counter");
+			var breakLabel = Expression.Label("breakLabel");
+
+			Expression.Assign(counter, Expression.Constant(0));
+			MemberInfo count = list.PropertyType.GetMember("Count")[0];
+
+			var attribute = (GenericSerializable)list.GetCustomAttribute(typeof(GenericSerializable));
+			var elementType = list.PropertyType.GetGenericArguments()[0];
+
+			var fields = GetFields(elementType, attribute);
+			var props = GetProperties(elementType, attribute);
+
+			List<Expression> calls = new List<Expression>();
+			calls.AddRange(fields.Select((f, index) => GenerateWriteCalls(f, writer, Expression.Property(lst, "Item", counter))));
+			calls.AddRange(props.Select((p, index) => GenerateWriteCalls(p, writer, Expression.Property(lst, "Item", counter))));
+
+			var block = Expression.Block(
+				new[] { counter },
+				Expression.Loop(
+					Expression.IfThenElse(
+						Expression.LessThan(counter, Expression.MakeMemberAccess(lst, count)),
+						Expression.Block(
+							Expression.Block(
+								calls
+							),
+							Expression.PostIncrementAssign(counter)
+						),
+						Expression.Break(breakLabel)
+					),
+					breakLabel
+				)
+			);
+
+			return block;
+		}
+
+		private static Expression ReadListClass(FieldInfo list, Expression reader, Expression instance)
+		{
+			var lst = Expression.Field(instance, list);
+			var counter = Expression.Variable(typeof(int), "counter");
+			var breakLabel = Expression.Label("breakLabel");
+
+			Expression.Assign(counter, Expression.Constant(0));
+			MemberInfo count = list.FieldType.GetMember("Count")[0];
+
+			var attribute = (GenericSerializable)list.GetCustomAttribute(typeof(GenericSerializable));
+			var elementType = list.FieldType.GetGenericArguments()[0];
+
+			var fields = GetFields(elementType, attribute);
+			var props = GetProperties(elementType, attribute);
+
+			List<Expression> calls = new List<Expression>();
+			calls.AddRange(fields.Select((f, index) => GenerateReadCalls(f, reader, Expression.Property(lst, "Item", counter))));
+			calls.AddRange(props.Select((p, index) => GenerateReadCalls(p, reader, Expression.Property(lst, "Item", counter))));
+
+			var block = Expression.Block(
+				new[] { counter },
+				Expression.Loop(
+					Expression.IfThenElse(
+						Expression.LessThan(counter, Expression.MakeMemberAccess(lst, count)),
+						Expression.Block(
+							Expression.Block(
+								calls
+							),
+							Expression.PostIncrementAssign(counter)
+						),
+						Expression.Break(breakLabel)
+					),
+					breakLabel
+				)
+			);
+
+			return block;
+		}
+
+		private static Expression ReadListClass(PropertyInfo list, Expression reader, Expression instance)
+		{
+			var lst = Expression.Property(instance, list);
+			var counter = Expression.Variable(typeof(int), "counter");
+			var breakLabel = Expression.Label("breakLabel");
+
+			Expression.Assign(counter, Expression.Constant(0));
+			MemberInfo count = list.PropertyType.GetMember("Count")[0];
+
+			var attribute = (GenericSerializable)list.GetCustomAttribute(typeof(GenericSerializable));
+			var elementType = list.PropertyType.GetGenericArguments()[0];
+
+			var fields = GetFields(elementType, attribute);
+			var props = GetProperties(elementType, attribute);
+
+			List<Expression> calls = new List<Expression>();
+			calls.AddRange(fields.Select((f, index) => GenerateReadCalls(f, reader, Expression.Property(lst, "Item", counter))));
+			calls.AddRange(props.Select((p, index) => GenerateReadCalls(p, reader, Expression.Property(lst, "Item", counter))));
+
+			var block = Expression.Block(
+				new[] { counter },
+				Expression.Loop(
+					Expression.IfThenElse(
+						Expression.LessThan(counter, Expression.MakeMemberAccess(lst, count)),
+						Expression.Block(
+							Expression.Block(
+								calls
+							),
 							Expression.PostIncrementAssign(counter)
 						),
 						Expression.Break(breakLabel)
