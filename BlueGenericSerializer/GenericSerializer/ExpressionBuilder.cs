@@ -11,7 +11,7 @@ namespace Blue.GenericSerializer
 	{
 		public static FieldInfo[] GetFields(Type objectType, GenericSerializable gsAttribute = null)
 		{
-			if(gsAttribute == null)
+			if (gsAttribute == null)
 				gsAttribute = (GenericSerializable)objectType.GetCustomAttribute(typeof(GenericSerializable));
 			//If this is null, it means the class holding a variable of this type is marked as "SerializeAllPublic"
 			//Thus; serialize all publics in the type's member aswell.
@@ -36,7 +36,7 @@ namespace Blue.GenericSerializer
 
 		public static FieldInfo[] GetFields(FieldInfo field, GenericSerializable gsAttribute = null)
 		{
-			if(gsAttribute == null)
+			if (gsAttribute == null)
 				gsAttribute = (GenericSerializable)field.GetCustomAttribute(typeof(GenericSerializable));
 			//If this is null, it means the class holding a variable of this type is marked as "SerializeAllPublic"
 			//Thus; serialize all publics in the type's member aswell.
@@ -61,7 +61,7 @@ namespace Blue.GenericSerializer
 
 		public static FieldInfo[] GetFields(PropertyInfo prop, GenericSerializable gsAttribute = null)
 		{
-			if(gsAttribute == null)
+			if (gsAttribute == null)
 				gsAttribute = (GenericSerializable)prop.GetCustomAttribute(typeof(GenericSerializable));
 			//If this is null, it means the class holding a variable of this type is marked as "SerializeAllPublic"
 			//Thus; serialize all publics in the type's member aswell.
@@ -86,7 +86,7 @@ namespace Blue.GenericSerializer
 
 		public static PropertyInfo[] GetProperties(Type objectType, GenericSerializable gsAttribute = null)
 		{
-			if(gsAttribute == null)
+			if (gsAttribute == null)
 				gsAttribute = (GenericSerializable)objectType.GetCustomAttribute(typeof(GenericSerializable));
 			//If this is null, it means the class holding a variable of this type is marked as "SerializeAllPublic"
 			//Thus; serialize all publics in the type's member aswell.
@@ -111,7 +111,7 @@ namespace Blue.GenericSerializer
 
 		public static PropertyInfo[] GetProperties(FieldInfo field, GenericSerializable gsAttribute = null)
 		{
-			if(gsAttribute == null)
+			if (gsAttribute == null)
 				gsAttribute = (GenericSerializable)field.GetCustomAttribute(typeof(GenericSerializable));
 			//If this is null, it means the class holding a variable of this type is marked as "SerializeAllPublic"
 			//Thus; serialize all publics in the type's member aswell.
@@ -136,7 +136,7 @@ namespace Blue.GenericSerializer
 
 		public static PropertyInfo[] GetProperties(PropertyInfo prop, GenericSerializable gsAttribute = null)
 		{
-			if(gsAttribute == null)
+			if (gsAttribute == null)
 				gsAttribute = (GenericSerializable)prop.GetCustomAttribute(typeof(GenericSerializable));
 			//If this is null, it means the class holding a variable of this type is marked as "SerializeAllPublic"
 			//Thus; serialize all publics in the type's member aswell.
@@ -173,7 +173,7 @@ namespace Blue.GenericSerializer
 			{
 				return Expression.Call(writer, "Write", null, Expression.Field(instance, field));
 			}
-			else if(type.IsArray && type.GetElementType() != null)
+			else if (type.IsArray && type.GetElementType() != null)
 			{
 				return WriteArray(field, writer, instance);
 			}
@@ -334,7 +334,7 @@ namespace Blue.GenericSerializer
 
 			else if (itemType.IsClass && !itemType.IsArray && !itemType.IsEnum)
 				return WriteArrayClass(array, writer, instance);
-			
+
 			else
 				return Expression.Empty();
 		}
@@ -381,24 +381,66 @@ namespace Blue.GenericSerializer
 		private static Expression WriteArrayPrimitive(FieldInfo array, Expression writer, Expression instance)
 		{
 			var arr = Expression.Field(instance, array);
-			var counter = Expression.Variable(typeof(int), "counter");
-			var breakLabel = Expression.Label("breakLabel");
-			Expression.Assign(counter, Expression.Constant(0));
+			var counter1 = Expression.Variable(typeof(int), "counter1");
+			var counter2 = Expression.Variable(typeof(int), "counter2");
 
-			var block = Expression.Block(
-				new[] { counter },
-				Expression.Loop(
-					Expression.IfThenElse(
-						Expression.LessThan(counter, Expression.ArrayLength(arr)),
-						Expression.Block(
-							Expression.Call(writer, "Write", null, Expression.ArrayAccess(arr, counter)),
-							Expression.PostIncrementAssign(counter)
+			var breakLabel = Expression.Label("breakLabel");
+			var breakLabelmd = Expression.Label("breakLabelmd");
+
+			Expression.Assign(counter1, Expression.Constant(0));
+			Expression.Assign(counter2, Expression.Constant(0));
+
+			Expression block = Expression.Empty();
+
+			var ranks = array.FieldType.GetArrayRank();
+			if (ranks > 2)
+				throw new NotImplementedException("2D Arrays or less are currently implemented.");
+
+			else if (ranks == 2)
+			{
+				var length1 = Expression.Call(Expression.Field(instance, array), "GetLength", null, Expression.Constant(0));
+				var length2 = Expression.Call(Expression.Field(instance, array), "GetLength", null, Expression.Constant(1));
+				block = Expression.Block(
+					new[] { counter1, counter2, },
+					Expression.Loop(
+						Expression.IfThenElse(
+							Expression.LessThan(counter1, length1),
+								Expression.Loop(
+									Expression.IfThenElse(
+										Expression.LessThan(counter2, length2),
+										Expression.Block(
+											Expression.Call(writer, "Write", null, Expression.ArrayAccess(arr, new[] { counter1, counter2 })),
+											Expression.PostIncrementAssign(counter2)
+											),
+										Expression.Block(
+											Expression.PostIncrementAssign(counter1),
+											Expression.Assign(counter2, Expression.Constant(0)),
+											Expression.Break(breakLabel)
+											)
+										),
+									breakLabel
+									),
+							Expression.Break(breakLabelmd)
+							),
+						breakLabelmd
+						)
+					);
+			}
+			else if (ranks == 1)
+				block = Expression.Block(
+					new[] { counter1 },
+					Expression.Loop(
+						Expression.IfThenElse(
+							Expression.LessThan(counter1, Expression.ArrayLength(arr)),
+							Expression.Block(
+								Expression.Call(writer, "Write", null, Expression.ArrayAccess(arr, counter1)),
+								Expression.PostIncrementAssign(counter1)
+							),
+							Expression.Break(breakLabel)
 						),
-						Expression.Break(breakLabel)
-					),
-					breakLabel
-				)
-			);
+						breakLabel
+					)
+				);
 
 			return block;
 		}
@@ -406,24 +448,67 @@ namespace Blue.GenericSerializer
 		private static Expression WriteArrayPrimitive(PropertyInfo array, Expression writer, Expression instance)
 		{
 			var arr = Expression.Property(instance, array);
-			var counter = Expression.Variable(typeof(int), "counter");
-			var breakLabel = Expression.Label("breakLabel");
-			Expression.Assign(counter, Expression.Constant(0));
+			var counter1 = Expression.Variable(typeof(int), "counter1");
+			var counter2 = Expression.Variable(typeof(int), "counter2");
 
-			var block = Expression.Block(
-				new[] { counter },
-				Expression.Loop(
-					Expression.IfThenElse(
-						Expression.LessThan(counter, Expression.ArrayLength(arr)),
-						Expression.Block(
-							Expression.Call(writer, "Write", null, Expression.ArrayAccess(arr, counter)),
-							Expression.PostIncrementAssign(counter)
+			var breakLabel = Expression.Label("breakLabel");
+			var breakLabelmd = Expression.Label("breakLabelmd");
+
+			Expression.Assign(counter1, Expression.Constant(0));
+			Expression.Assign(counter2, Expression.Constant(0));
+
+			Expression block = Expression.Empty();
+
+			var ranks = array.PropertyType.GetArrayRank();
+
+			if (ranks > 2)
+				throw new NotImplementedException("2D Arrays or less are currently implemented.");
+
+			else if (ranks == 2)
+			{
+				var length1 = Expression.Call(Expression.Property(instance, array), "GetLength", null, Expression.Constant(0));
+				var length2 = Expression.Call(Expression.Property(instance, array), "GetLength", null, Expression.Constant(1));
+				block = Expression.Block(
+					new[] { counter1, counter2, },
+					Expression.Loop(
+						Expression.IfThenElse(
+							Expression.LessThan(counter1, length1),
+								Expression.Loop(
+									Expression.IfThenElse(
+										Expression.LessThan(counter2, length2),
+										Expression.Block(
+											Expression.Call(writer, "Write", null, Expression.ArrayAccess(arr, new[] { counter1, counter2 })),
+											Expression.PostIncrementAssign(counter2)
+											),
+										Expression.Block(
+											Expression.PostIncrementAssign(counter1),
+											Expression.Assign(counter2, Expression.Constant(0)),
+											Expression.Break(breakLabel)
+											)
+										),
+									breakLabel
+									),
+							Expression.Break(breakLabelmd)
+							),
+						breakLabelmd
+						)
+					);
+			}
+			else if (ranks == 1)
+				block = Expression.Block(
+					new[] { counter1 },
+					Expression.Loop(
+						Expression.IfThenElse(
+							Expression.LessThan(counter1, Expression.ArrayLength(arr)),
+							Expression.Block(
+								Expression.Call(writer, "Write", null, Expression.ArrayAccess(arr, counter1)),
+								Expression.PostIncrementAssign(counter1)
+							),
+							Expression.Break(breakLabel)
 						),
-						Expression.Break(breakLabel)
-					),
-					breakLabel
-				)
-			);
+						breakLabel
+					)
+				);
 
 			return block;
 		}
@@ -431,28 +516,72 @@ namespace Blue.GenericSerializer
 		private static Expression ReadArrayPrimitive(FieldInfo array, Expression reader, Expression instance)
 		{
 			var arr = Expression.Field(instance, array);
-			var counter = Expression.Variable(typeof(int), "counter");
+			var counter1 = Expression.Variable(typeof(int), "counter1");
+			var counter2 = Expression.Variable(typeof(int), "counter2");
+
 			var breakLabel = Expression.Label("breakLabel");
+			var breakLabelmd = Expression.Label("breakLabelmd");
 
-			Expression.Assign(counter, Expression.Constant(0));
+			Expression.Assign(counter1, Expression.Constant(0));
+			Expression.Assign(counter2, Expression.Constant(0));
 
-			var block = Expression.Block(
-				new[] { counter },
-				Expression.Loop(
-					Expression.IfThenElse(
-						Expression.LessThan(counter, Expression.ArrayLength(arr)),
-						Expression.Block(
-							Expression.Assign(
-								Expression.ArrayAccess(arr, counter),
-								Expression.Call(reader, "Read" + array.FieldType.GetElementType().Name, null, null)
-								),
-							Expression.PostIncrementAssign(counter)
+			Expression block = Expression.Empty();
+
+			var ranks = array.FieldType.GetArrayRank();
+			if (ranks > 2)
+				throw new NotImplementedException("2D Arrays or less are currently implemented.");
+
+			else if (ranks == 2)
+			{
+				var length1 = Expression.Call(Expression.Field(instance, array), "GetLength", null, Expression.Constant(0));
+				var length2 = Expression.Call(Expression.Field(instance, array), "GetLength", null, Expression.Constant(1));
+				block = Expression.Block(
+					new[] { counter1, counter2, },
+					Expression.Loop(
+						Expression.IfThenElse(
+							Expression.LessThan(counter1, length1),
+								Expression.Loop(
+									Expression.IfThenElse(
+										Expression.LessThan(counter2, length2),
+										Expression.Block(
+											Expression.Assign(
+												Expression.ArrayAccess(arr, new[] { counter1, counter2 }),
+												Expression.Call(reader, "Read" + array.FieldType.GetElementType().Name, null, null)
+											),
+											Expression.PostIncrementAssign(counter2)
+											),
+										Expression.Block(
+											Expression.PostIncrementAssign(counter1),
+											Expression.Assign(counter2, Expression.Constant(0)),
+											Expression.Break(breakLabel)
+											)
+										),
+									breakLabel
+									),
+							Expression.Break(breakLabelmd)
+							),
+						breakLabelmd
+						)
+					);
+			}
+			else if (ranks == 1)
+				block = Expression.Block(
+					new[] { counter1 },
+					Expression.Loop(
+						Expression.IfThenElse(
+							Expression.LessThan(counter1, Expression.ArrayLength(arr)),
+							Expression.Block(
+								Expression.Assign(
+									Expression.ArrayAccess(arr, counter1),
+									Expression.Call(reader, "Read" + array.FieldType.GetElementType().Name, null, null)
+									),
+								Expression.PostIncrementAssign(counter1)
+							),
+							Expression.Break(breakLabel)
 						),
-						Expression.Break(breakLabel)
-					),
-					breakLabel
-				)
-			);
+						breakLabel
+					)
+				);
 
 			return block;
 		}
@@ -460,22 +589,66 @@ namespace Blue.GenericSerializer
 		private static Expression ReadArrayPrimitive(PropertyInfo array, Expression reader, Expression instance)
 		{
 			var arr = Expression.Property(instance, array);
-			var counter = Expression.Variable(typeof(int), "counter");
+			var counter1 = Expression.Variable(typeof(int), "counter1");
+			var counter2 = Expression.Variable(typeof(int), "counter2");
+
 			var breakLabel = Expression.Label("breakLabel");
+			var breakLabelmd = Expression.Label("breakLabelmd");
 
-			Expression.Assign(counter, Expression.Constant(0));
+			Expression.Assign(counter1, Expression.Constant(0));
+			Expression.Assign(counter2, Expression.Constant(0));
 
-			var block = Expression.Block(
-				new[] { counter },
+			Expression block = Expression.Empty();
+
+			var ranks = array.PropertyType.GetArrayRank();
+			if (ranks > 2)
+				throw new NotImplementedException("2D Arrays or less are currently implemented.");
+
+			else if (ranks == 2)
+			{
+				var length1 = Expression.Call(Expression.Property(instance, array), "GetLength", null, Expression.Constant(0));
+				var length2 = Expression.Call(Expression.Property(instance, array), "GetLength", null, Expression.Constant(1));
+				block = Expression.Block(
+					new[] { counter1, counter2, },
+					Expression.Loop(
+						Expression.IfThenElse(
+							Expression.LessThan(counter1, length1),
+								Expression.Loop(
+									Expression.IfThenElse(
+										Expression.LessThan(counter2, length2),
+										Expression.Block(
+											Expression.Assign(
+												Expression.ArrayAccess(arr, new[] { counter1, counter2 }),
+												Expression.Call(reader, "Read" + array.PropertyType.GetElementType().Name, null, null)
+											),
+											Expression.PostIncrementAssign(counter2)
+											),
+										Expression.Block(
+											Expression.PostIncrementAssign(counter1),
+											Expression.Assign(counter2, Expression.Constant(0)),
+											Expression.Break(breakLabel)
+											)
+										),
+									breakLabel
+									),
+							Expression.Break(breakLabelmd)
+							),
+						breakLabelmd
+						)
+					);
+			}
+			else if (ranks == 1)
+				block = Expression.Block(
+				new[] { counter1 },
 				Expression.Loop(
 					Expression.IfThenElse(
-						Expression.LessThan(counter, Expression.ArrayLength(arr)),
+						Expression.LessThan(counter1, Expression.ArrayLength(arr)),
 						Expression.Block(
 							Expression.Assign(
-								Expression.ArrayAccess(arr, counter),
+								Expression.ArrayAccess(arr, counter1),
 								Expression.Call(reader, "Read" + array.PropertyType.GetElementType().Name, null, null)
 								),
-							Expression.PostIncrementAssign(counter)
+							Expression.PostIncrementAssign(counter1)
 						),
 						Expression.Break(breakLabel)
 					),
@@ -489,9 +662,12 @@ namespace Blue.GenericSerializer
 		private static Expression WriteArrayClass(FieldInfo array, Expression writer, Expression instance)
 		{
 			var arr = Expression.Field(instance, array);
-			var counter = Expression.Variable(typeof(int), "counter");
+			var counter1 = Expression.Variable(typeof(int), "counter1");
+			var counter2 = Expression.Variable(typeof(int), "counter2");
 			var breakLabel = Expression.Label("breakLabel");
-			Expression.Assign(counter, Expression.Constant(0));
+			var breakLabelmd = Expression.Label("breakLabelmd");
+			Expression.Assign(counter1, Expression.Constant(0));
+			Expression.Assign(counter2, Expression.Constant(0));
 
 			var attribute = (GenericSerializable)array.GetCustomAttribute(typeof(GenericSerializable));
 			var elementType = array.FieldType.GetElementType();
@@ -499,36 +675,85 @@ namespace Blue.GenericSerializer
 			var fields = GetFields(elementType, attribute);
 			var props = GetProperties(elementType, attribute);
 
+			//Generating calls for the array's data type
 			List<Expression> calls = new List<Expression>();
-			calls.AddRange(fields.Select((f, index) => GenerateWriteCalls(f, writer, Expression.ArrayAccess(arr, counter))));
-			calls.AddRange(props.Select((p, index) => GenerateWriteCalls(p, writer, Expression.ArrayAccess(arr, counter))));
 
-			var block = Expression.Block(
-				new[] { counter },
+			Expression block = Expression.Empty();
+
+			var ranks = array.FieldType.GetArrayRank();
+			if (ranks > 2)
+				throw new NotImplementedException("2D Arrays or less are currently implemented.");
+
+			else if (ranks == 2)
+			{
+				//Simulate serializing the type of the array. i.e: Int, Vector3 etc
+				calls.AddRange(fields.Select((f, index) => GenerateWriteCalls(f, writer, Expression.ArrayAccess(arr, counter1, counter2))));
+				calls.AddRange(props.Select((p, index) => GenerateWriteCalls(p, writer, Expression.ArrayAccess(arr, counter1, counter2))));
+
+				var length1 = Expression.Call(Expression.Field(instance, array), "GetLength", null, Expression.Constant(0));
+				var length2 = Expression.Call(Expression.Field(instance, array), "GetLength", null, Expression.Constant(1));
+
+				block = Expression.Block(
+					new[] { counter1, counter2, },
+					Expression.Loop(
+						Expression.IfThenElse(
+							Expression.LessThan(counter1, length1),
+								Expression.Loop(
+									Expression.IfThenElse(
+										Expression.LessThan(counter2, length2),
+										Expression.Block(
+											Expression.Block(
+												calls
+											),
+											Expression.PostIncrementAssign(counter2)
+											),
+										Expression.Block(
+											Expression.PostIncrementAssign(counter1),
+											Expression.Assign(counter2, Expression.Constant(0)),
+											Expression.Break(breakLabel)
+											)
+										),
+									breakLabel
+									),
+							Expression.Break(breakLabelmd)
+							),
+						breakLabelmd
+						)
+					);
+			}
+			else if (ranks == 1)
+			{
+				calls.AddRange(fields.Select((f, index) => GenerateWriteCalls(f, writer, Expression.ArrayAccess(arr, counter1))));
+				calls.AddRange(props.Select((p, index) => GenerateWriteCalls(p, writer, Expression.ArrayAccess(arr, counter1))));
+
+				block = Expression.Block(
+				new[] { counter1 },
 				Expression.Loop(
 					Expression.IfThenElse(
-						Expression.LessThan(counter, Expression.ArrayLength(arr)),
+						Expression.LessThan(counter1, Expression.ArrayLength(arr)),
 						Expression.Block(
 							Expression.Block(
 								calls
 							),
-							Expression.PostIncrementAssign(counter)
+							Expression.PostIncrementAssign(counter1)
 						),
 						Expression.Break(breakLabel)
 					),
 					breakLabel
-				)
-			);
-
+				));
+			}
 			return block;
 		}
 
 		private static Expression WriteArrayClass(PropertyInfo array, Expression writer, Expression instance)
 		{
 			var arr = Expression.Property(instance, array);
-			var counter = Expression.Variable(typeof(int), "counter");
+			var counter1 = Expression.Variable(typeof(int), "counter1");
+			var counter2 = Expression.Variable(typeof(int), "counter2");
 			var breakLabel = Expression.Label("breakLabel");
-			Expression.Assign(counter, Expression.Constant(0));
+			var breakLabelmd = Expression.Label("breakLabelmd");
+			Expression.Assign(counter1, Expression.Constant(0));
+			Expression.Assign(counter2, Expression.Constant(0));
 
 			var attribute = (GenericSerializable)array.GetCustomAttribute(typeof(GenericSerializable));
 			var elementType = array.PropertyType.GetElementType();
@@ -536,36 +761,85 @@ namespace Blue.GenericSerializer
 			var fields = GetFields(elementType, attribute);
 			var props = GetProperties(elementType, attribute);
 
+			//Generating calls for the array's data type
 			List<Expression> calls = new List<Expression>();
-			calls.AddRange(fields.Select((f, index) => GenerateWriteCalls(f, writer, Expression.ArrayAccess(arr, counter))));
-			calls.AddRange(props.Select((p, index) => GenerateWriteCalls(p, writer, Expression.ArrayAccess(arr, counter))));
 
-			var block = Expression.Block(
-				new[] { counter },
+			Expression block = Expression.Empty();
+
+			var ranks = array.PropertyType.GetArrayRank();
+			if (ranks > 2)
+				throw new NotImplementedException("2D Arrays or less are currently implemented.");
+
+			else if (ranks == 2)
+			{
+				//Simulate serializing the type of the array. i.e: Int, Vector3 etc
+				calls.AddRange(fields.Select((f, index) => GenerateWriteCalls(f, writer, Expression.ArrayAccess(arr, counter1, counter2))));
+				calls.AddRange(props.Select((p, index) => GenerateWriteCalls(p, writer, Expression.ArrayAccess(arr, counter1, counter2))));
+
+				var length1 = Expression.Call(Expression.Property(instance, array), "GetLength", null, Expression.Constant(0));
+				var length2 = Expression.Call(Expression.Property(instance, array), "GetLength", null, Expression.Constant(1));
+
+				block = Expression.Block(
+					new[] { counter1, counter2, },
+					Expression.Loop(
+						Expression.IfThenElse(
+							Expression.LessThan(counter1, length1),
+								Expression.Loop(
+									Expression.IfThenElse(
+										Expression.LessThan(counter2, length2),
+										Expression.Block(
+											Expression.Block(
+												calls
+											),
+											Expression.PostIncrementAssign(counter2)
+											),
+										Expression.Block(
+											Expression.PostIncrementAssign(counter1),
+											Expression.Assign(counter2, Expression.Constant(0)),
+											Expression.Break(breakLabel)
+											)
+										),
+									breakLabel
+									),
+							Expression.Break(breakLabelmd)
+							),
+						breakLabelmd
+						)
+					);
+			}
+			else if (ranks == 1)
+			{
+				calls.AddRange(fields.Select((f, index) => GenerateWriteCalls(f, writer, Expression.ArrayAccess(arr, counter1))));
+				calls.AddRange(props.Select((p, index) => GenerateWriteCalls(p, writer, Expression.ArrayAccess(arr, counter1))));
+
+				block = Expression.Block(
+				new[] { counter1 },
 				Expression.Loop(
 					Expression.IfThenElse(
-						Expression.LessThan(counter, Expression.ArrayLength(arr)),
+						Expression.LessThan(counter1, Expression.ArrayLength(arr)),
 						Expression.Block(
 							Expression.Block(
 								calls
 							),
-							Expression.PostIncrementAssign(counter)
+							Expression.PostIncrementAssign(counter1)
 						),
 						Expression.Break(breakLabel)
 					),
 					breakLabel
-				)
-			);
-
+				));
+			}
 			return block;
 		}
 
 		private static Expression ReadArrayClass(FieldInfo array, Expression writer, Expression instance)
 		{
 			var arr = Expression.Field(instance, array);
-			var counter = Expression.Variable(typeof(int), "counter");
+			var counter1 = Expression.Variable(typeof(int), "counter1");
+			var counter2 = Expression.Variable(typeof(int), "counter2");
 			var breakLabel = Expression.Label("breakLabel");
-			Expression.Assign(counter, Expression.Constant(0));
+			var breakLabelmd = Expression.Label("breakLabelmd");
+			Expression.Assign(counter1, Expression.Constant(0));
+			Expression.Assign(counter2, Expression.Constant(0));
 
 			var attribute = (GenericSerializable)array.GetCustomAttribute(typeof(GenericSerializable));
 			var elementType = array.FieldType.GetElementType();
@@ -573,36 +847,85 @@ namespace Blue.GenericSerializer
 			var fields = GetFields(elementType, attribute);
 			var props = GetProperties(elementType, attribute);
 
+			//Generating calls for the array's data type
 			List<Expression> calls = new List<Expression>();
-			calls.AddRange(fields.Select((f, index) => GenerateReadCalls(f, writer, Expression.ArrayAccess(arr, counter))));
-			calls.AddRange(props.Select((p, index) => GenerateReadCalls(p, writer, Expression.ArrayAccess(arr, counter))));
 
-			var block = Expression.Block(
-				new[] { counter },
+			Expression block = Expression.Empty();
+
+			var ranks = array.FieldType.GetArrayRank();
+			if (ranks > 2)
+				throw new NotImplementedException("2D Arrays or less are currently implemented.");
+
+			else if (ranks == 2)
+			{
+				//Simulate serializing the type of the array. i.e: Int, Vector3 etc
+				calls.AddRange(fields.Select((f, index) => GenerateReadCalls(f, writer, Expression.ArrayAccess(arr, counter1, counter2))));
+				calls.AddRange(props.Select((p, index) => GenerateReadCalls(p, writer, Expression.ArrayAccess(arr, counter1, counter2))));
+
+				var length1 = Expression.Call(Expression.Field(instance, array), "GetLength", null, Expression.Constant(0));
+				var length2 = Expression.Call(Expression.Field(instance, array), "GetLength", null, Expression.Constant(1));
+
+				block = Expression.Block(
+					new[] { counter1, counter2, },
+					Expression.Loop(
+						Expression.IfThenElse(
+							Expression.LessThan(counter1, length1),
+								Expression.Loop(
+									Expression.IfThenElse(
+										Expression.LessThan(counter2, length2),
+										Expression.Block(
+											Expression.Block(
+												calls
+											),
+											Expression.PostIncrementAssign(counter2)
+											),
+										Expression.Block(
+											Expression.PostIncrementAssign(counter1),
+											Expression.Assign(counter2, Expression.Constant(0)),
+											Expression.Break(breakLabel)
+											)
+										),
+									breakLabel
+									),
+							Expression.Break(breakLabelmd)
+							),
+						breakLabelmd
+						)
+					);
+			}
+			else if (ranks == 1)
+			{
+				calls.AddRange(fields.Select((f, index) => GenerateReadCalls(f, writer, Expression.ArrayAccess(arr, counter1))));
+				calls.AddRange(props.Select((p, index) => GenerateReadCalls(p, writer, Expression.ArrayAccess(arr, counter1))));
+
+				block = Expression.Block(
+				new[] { counter1 },
 				Expression.Loop(
 					Expression.IfThenElse(
-						Expression.LessThan(counter, Expression.ArrayLength(arr)),
+						Expression.LessThan(counter1, Expression.ArrayLength(arr)),
 						Expression.Block(
 							Expression.Block(
 								calls
 							),
-							Expression.PostIncrementAssign(counter)
+							Expression.PostIncrementAssign(counter1)
 						),
 						Expression.Break(breakLabel)
 					),
 					breakLabel
-				)
-			);
-
+				));
+			}
 			return block;
 		}
 
 		private static Expression ReadArrayClass(PropertyInfo array, Expression writer, Expression instance)
-		{
+			{
 			var arr = Expression.Property(instance, array);
-			var counter = Expression.Variable(typeof(int), "counter");
+			var counter1 = Expression.Variable(typeof(int), "counter1");
+			var counter2 = Expression.Variable(typeof(int), "counter2");
 			var breakLabel = Expression.Label("breakLabel");
-			Expression.Assign(counter, Expression.Constant(0));
+			var breakLabelmd = Expression.Label("breakLabelmd");
+			Expression.Assign(counter1, Expression.Constant(0));
+			Expression.Assign(counter2, Expression.Constant(0));
 
 			var attribute = (GenericSerializable)array.GetCustomAttribute(typeof(GenericSerializable));
 			var elementType = array.PropertyType.GetElementType();
@@ -610,30 +933,76 @@ namespace Blue.GenericSerializer
 			var fields = GetFields(elementType, attribute);
 			var props = GetProperties(elementType, attribute);
 
+			//Generating calls for the array's data type
 			List<Expression> calls = new List<Expression>();
-			calls.AddRange(fields.Select((f, index) => GenerateReadCalls(f, writer, Expression.ArrayAccess(arr, counter))));
-			calls.AddRange(props.Select((p, index) => GenerateReadCalls(p, writer, Expression.ArrayAccess(arr, counter))));
 
-			var block = Expression.Block(
-				new[] { counter },
+			Expression block = Expression.Empty();
+
+			var ranks = array.PropertyType.GetArrayRank();
+			if (ranks > 2)
+				throw new NotImplementedException("2D Arrays or less are currently implemented.");
+
+			else if (ranks == 2)
+			{
+				//Simulate serializing the type of the array. i.e: Int, Vector3 etc
+				calls.AddRange(fields.Select((f, index) => GenerateReadCalls(f, writer, Expression.ArrayAccess(arr, counter1, counter2))));
+				calls.AddRange(props.Select((p, index) => GenerateReadCalls(p, writer, Expression.ArrayAccess(arr, counter1, counter2))));
+
+				var length1 = Expression.Call(Expression.Property(instance, array), "GetLength", null, Expression.Constant(0));
+				var length2 = Expression.Call(Expression.Property(instance, array), "GetLength", null, Expression.Constant(1));
+
+				block = Expression.Block(
+					new[] { counter1, counter2, },
+					Expression.Loop(
+						Expression.IfThenElse(
+							Expression.LessThan(counter1, length1),
+								Expression.Loop(
+									Expression.IfThenElse(
+										Expression.LessThan(counter2, length2),
+										Expression.Block(
+											Expression.Block(
+												calls
+											),
+											Expression.PostIncrementAssign(counter2)
+											),
+										Expression.Block(
+											Expression.PostIncrementAssign(counter1),
+											Expression.Assign(counter2, Expression.Constant(0)),
+											Expression.Break(breakLabel)
+											)
+										),
+									breakLabel
+									),
+							Expression.Break(breakLabelmd)
+							),
+						breakLabelmd
+						)
+					);
+			}
+			else if (ranks == 1)
+			{
+				calls.AddRange(fields.Select((f, index) => GenerateReadCalls(f, writer, Expression.ArrayAccess(arr, counter1))));
+				calls.AddRange(props.Select((p, index) => GenerateReadCalls(p, writer, Expression.ArrayAccess(arr, counter1))));
+
+				block = Expression.Block(
+				new[] { counter1 },
 				Expression.Loop(
 					Expression.IfThenElse(
-						Expression.LessThan(counter, Expression.ArrayLength(arr)),
+						Expression.LessThan(counter1, Expression.ArrayLength(arr)),
 						Expression.Block(
 							Expression.Block(
 								calls
 							),
-							Expression.PostIncrementAssign(counter)
+							Expression.PostIncrementAssign(counter1)
 						),
 						Expression.Break(breakLabel)
 					),
 					breakLabel
-				)
-			);
-
+				));
+			}
 			return block;
 		}
-		
+
 		#endregion
 
 		#region LISTS

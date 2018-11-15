@@ -11,9 +11,9 @@ namespace FeatureTesting
 {
 	public class Vector2
 	{
-		public float x, y;
+		public int x, y;
 
-		public Vector2(float x, float y)
+		public Vector2(int x, int y)
 		{
 			this.x = x;
 			this.y = y;
@@ -37,6 +37,11 @@ namespace FeatureTesting
 	{
 		public static Action<BinaryWriter, TestSerializable> serialize;
 		public static Action<BinaryReader, TestSerializable> deserialize;
+
+		public int[,] aaa2darray = { {1, 2}, {3, 4}, { 5, 6 }, { 7, 8 } };
+
+		public Vector2[,] a2dvecarray = { { new Vector2(1, 2), new Vector2(3, 4) } , { new Vector2(1, 2), new Vector2(3, 4) } };
+		//public int[,,] aaamultiarray1 = { { { 1, 2, 3 } , { 1, 2, 3 }, { 1, 2, 3 } }, { { 3, 4, 4 }, { 3, 4, 4}, { 3, 4, 4 } }, { { 5, 6, 7 }, { 5, 6, 7 }, { 5, 6, 7 } }, };
 
 		public int[] array1 = new int[6] { 1, 2, 3, 4, 5, 6 };
 
@@ -78,6 +83,17 @@ namespace FeatureTesting
 		public void GenerateRandomValues()
 		{
 			Random rnd = new Random();
+			for (int i = 0; i < aaa2darray.GetLength(0); i++)
+				for(int l = 0; l < aaa2darray.GetLength(1); l++)
+				{
+					aaa2darray[i, l] = rnd.Next(0, 200);
+				}
+
+			for (int i = 0; i < a2dvecarray.GetLength(0); i++)
+				for (int l = 0; l < a2dvecarray.GetLength(1); l++)
+				{
+					a2dvecarray[i, l] = new Vector2( rnd.Next(0, 200), rnd.Next(0, 200));
+				}
 
 			for (int i = 0; i < array1.Length; i++)
 			{
@@ -211,6 +227,11 @@ namespace FeatureTesting
 
 	class Program
 	{
+		static void mdarray(int[] array)
+		{
+
+		}
+
 		static void Main(string[] args)
 		{
 			Stopwatch sw = new Stopwatch();
@@ -229,7 +250,15 @@ namespace FeatureTesting
 			TestSerializable fieldTest = new TestSerializable();
 			TestSerializable randomValues = new TestSerializable();
 
+			//var ranks = fieldTest.aaamultiarray1.Rank;
+
+			//for(int i = 0; i < ranks; i++)
+			//{
+			//	var x = fieldTest.aaamultiarray1[i, i, i];
+			//}
+
 			randomValues.GenerateRandomValues();
+
 			randomValues.Serialize(bw);
 			stream.Position = 0;
 

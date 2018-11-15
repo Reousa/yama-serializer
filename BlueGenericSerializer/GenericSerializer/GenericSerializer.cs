@@ -27,7 +27,7 @@ namespace Blue.GenericSerializer
 				FieldInfo deserializeDelegate = sType.GetField("deserialize", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
 
 				if (serializeDelegate == null || deserializeDelegate == null)
-					throw new NotImplementedException(String.Format("Class `{0}` does not implement one of the Serialize or Deserialize delegates.", sType));
+					throw new NotImplementedException(String.Format("Type `{0}` does not implement one of the Serialize or Deserialize delegates.", sType));
 
 				var writerType = serializeDelegate.FieldType.GenericTypeArguments.First();
 				var readerType = deserializeDelegate.FieldType.GenericTypeArguments.First();
