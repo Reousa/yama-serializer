@@ -20,8 +20,8 @@ It is built using C#'s `System.Linq.Expression` & `Sytem.Reflection` libraries, 
 #### Type Serialization
 - [x] Primitive type member serialization.
 - [x] Class type member serialization.
-- [x] Primitive type based 1-dimension array & list serialization
-- [x] Class type based 1-dimension array & list serialization.
+- [x] Primitive type based 1-dimension array & list serialization. - (In development, release is bugged.)
+- [x] User defined type based 1-dimension array & list serialization. - (In development, release is bugged.)
 - [ ] Multi dimension array & list serialization.
 - [ ] Dictionary serialization.
 - [ ] Struct serialization.
