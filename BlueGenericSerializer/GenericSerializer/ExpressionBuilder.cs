@@ -9,8 +9,12 @@ namespace Blue.GenericSerializer
 {
 	public static class ExpressionBuilder
 	{
+		public static NLog.Logger Log = NLog.LogManager.GetCurrentClassLogger();
+
 		public static FieldInfo[] GetFields(Type objectType, GenericSerializable gsAttribute = null)
 		{
+			Log.Info("Getting fields for type: " + objectType.Name);
+
 			if (gsAttribute == null)
 				gsAttribute = (GenericSerializable)objectType.GetCustomAttribute(typeof(GenericSerializable));
 			//If this is null, it means the class holding a variable of this type is marked as "SerializeAllPublic"
@@ -36,6 +40,7 @@ namespace Blue.GenericSerializer
 
 		public static FieldInfo[] GetFields(FieldInfo field, GenericSerializable gsAttribute = null)
 		{
+			Log.Info("Getting fields for field: " + field.Name);
 			if (gsAttribute == null)
 				gsAttribute = (GenericSerializable)field.GetCustomAttribute(typeof(GenericSerializable));
 			//If this is null, it means the class holding a variable of this type is marked as "SerializeAllPublic"
@@ -61,6 +66,8 @@ namespace Blue.GenericSerializer
 
 		public static FieldInfo[] GetFields(PropertyInfo prop, GenericSerializable gsAttribute = null)
 		{
+			Log.Info("Getting fields for property: " + prop.Name);
+
 			if (gsAttribute == null)
 				gsAttribute = (GenericSerializable)prop.GetCustomAttribute(typeof(GenericSerializable));
 			//If this is null, it means the class holding a variable of this type is marked as "SerializeAllPublic"
@@ -86,6 +93,8 @@ namespace Blue.GenericSerializer
 
 		public static PropertyInfo[] GetProperties(Type objectType, GenericSerializable gsAttribute = null)
 		{
+			Log.Info("Getting Properties for type: " + objectType.Name);
+
 			if (gsAttribute == null)
 				gsAttribute = (GenericSerializable)objectType.GetCustomAttribute(typeof(GenericSerializable));
 			//If this is null, it means the class holding a variable of this type is marked as "SerializeAllPublic"
@@ -111,6 +120,8 @@ namespace Blue.GenericSerializer
 
 		public static PropertyInfo[] GetProperties(FieldInfo field, GenericSerializable gsAttribute = null)
 		{
+			Log.Info("Getting properties for field: " + field.Name);
+
 			if (gsAttribute == null)
 				gsAttribute = (GenericSerializable)field.GetCustomAttribute(typeof(GenericSerializable));
 			//If this is null, it means the class holding a variable of this type is marked as "SerializeAllPublic"
@@ -136,6 +147,8 @@ namespace Blue.GenericSerializer
 
 		public static PropertyInfo[] GetProperties(PropertyInfo prop, GenericSerializable gsAttribute = null)
 		{
+			Log.Info("Getting properties for property: " + prop.Name);
+
 			if (gsAttribute == null)
 				gsAttribute = (GenericSerializable)prop.GetCustomAttribute(typeof(GenericSerializable));
 			//If this is null, it means the class holding a variable of this type is marked as "SerializeAllPublic"
@@ -168,6 +181,8 @@ namespace Blue.GenericSerializer
 		/// <returns></returns>
 		public static Expression GenerateWriteCalls(FieldInfo field, Expression writer, Expression instance)
 		{
+			Log.Info("Generating write calls for field: {0}.{1}", instance.ToString(), field.Name);
+
 			var type = field.FieldType;
 			if (type.IsPrimitive || type == typeof(decimal) || type == typeof(string))
 			{
@@ -202,6 +217,8 @@ namespace Blue.GenericSerializer
 
 		public static Expression GenerateWriteCalls(PropertyInfo prop, Expression writer, Expression instance)
 		{
+			Log.Info("Generating write calls for property: {0}.{1}", instance, prop.Name);
+
 			var type = prop.PropertyType;
 			if (type.IsPrimitive || type == typeof(decimal) || type == typeof(string))
 			{
@@ -243,6 +260,8 @@ namespace Blue.GenericSerializer
 		/// <returns></returns>
 		public static Expression GenerateReadCalls(FieldInfo field, Expression reader, Expression instance)
 		{
+			Log.Info("Generating read calls for field: {0}.{1}", instance, field.Name);
+
 			var type = field.FieldType;
 			if (type.IsPrimitive || type == typeof(decimal) || type == typeof(string))
 			{
@@ -281,6 +300,8 @@ namespace Blue.GenericSerializer
 
 		public static Expression GenerateReadCalls(PropertyInfo prop, Expression reader, Expression instance)
 		{
+			Log.Info("Generating read calls for property: {0}.{1}", instance, prop.Name);
+
 			var type = prop.PropertyType;
 			if (type.IsPrimitive || type == typeof(decimal) || type == typeof(string))
 			{
@@ -409,7 +430,7 @@ namespace Blue.GenericSerializer
 									Expression.IfThenElse(
 										Expression.LessThan(counter2, length2),
 										Expression.Block(
-											Expression.Call(writer, "Write", null, Expression.ArrayAccess(arr, new[] { counter1, counter2 })),
+											Expression.Call(writer, "Write", null, Expression.ArrayAccess(arr, new List<Expression> { counter1, counter2 })),
 											Expression.PostIncrementAssign(counter2)
 											),
 										Expression.Block(
@@ -427,8 +448,12 @@ namespace Blue.GenericSerializer
 					);
 			}
 			else if (ranks == 1)
+			{
+				var length1 = Expression.Call(Expression.Field(instance, array), "GetLength", null, Expression.Constant(0));
+
 				block = Expression.Block(
 					new[] { counter1 },
+					Expression.Call(writer, "Write", null, length1),
 					Expression.Loop(
 						Expression.IfThenElse(
 							Expression.LessThan(counter1, Expression.ArrayLength(arr)),
@@ -441,7 +466,7 @@ namespace Blue.GenericSerializer
 						breakLabel
 					)
 				);
-
+			}
 			return block;
 		}
 
@@ -477,7 +502,7 @@ namespace Blue.GenericSerializer
 									Expression.IfThenElse(
 										Expression.LessThan(counter2, length2),
 										Expression.Block(
-											Expression.Call(writer, "Write", null, Expression.ArrayAccess(arr, new[] { counter1, counter2 })),
+											Expression.Call(writer, "Write", null, Expression.ArrayAccess(arr, new List<Expression> { counter1, counter2 })),
 											Expression.PostIncrementAssign(counter2)
 											),
 										Expression.Block(
@@ -495,8 +520,12 @@ namespace Blue.GenericSerializer
 					);
 			}
 			else if (ranks == 1)
+			{
+				var length1 = Expression.Call(Expression.Property(instance, array), "GetLength", null, Expression.Constant(0));
+
 				block = Expression.Block(
 					new[] { counter1 },
+					Expression.Call(writer, "Write", null, length1),
 					Expression.Loop(
 						Expression.IfThenElse(
 							Expression.LessThan(counter1, Expression.ArrayLength(arr)),
@@ -509,7 +538,7 @@ namespace Blue.GenericSerializer
 						breakLabel
 					)
 				);
-
+			}
 			return block;
 		}
 
@@ -545,7 +574,7 @@ namespace Blue.GenericSerializer
 										Expression.LessThan(counter2, length2),
 										Expression.Block(
 											Expression.Assign(
-												Expression.ArrayAccess(arr, new[] { counter1, counter2 }),
+												Expression.ArrayAccess(arr, new List<Expression> { counter1, counter2 }),
 												Expression.Call(reader, "Read" + array.FieldType.GetElementType().Name, null, null)
 											),
 											Expression.PostIncrementAssign(counter2)
@@ -564,25 +593,27 @@ namespace Blue.GenericSerializer
 						)
 					);
 			}
-			else if (ranks == 1)
+			else if(ranks == 1)
+			{
+				var readSerializedLength = Expression.Call(reader, "ReadInt32", null, null);
 				block = Expression.Block(
-					new[] { counter1 },
-					Expression.Loop(
-						Expression.IfThenElse(
-							Expression.LessThan(counter1, Expression.ArrayLength(arr)),
-							Expression.Block(
-								Expression.Assign(
-									Expression.ArrayAccess(arr, counter1),
-									Expression.Call(reader, "Read" + array.FieldType.GetElementType().Name, null, null)
-									),
-								Expression.PostIncrementAssign(counter1)
-							),
-							Expression.Break(breakLabel)
+				new[] { counter1 },
+				Expression.Assign(arr, Expression.NewArrayBounds(array.FieldType.GetElementType(), new[] { readSerializedLength })),
+				Expression.Loop(
+					Expression.IfThenElse(
+						Expression.LessThan(counter1, Expression.ArrayLength(arr)),
+						Expression.Block(
+							Expression.Assign(
+								Expression.ArrayAccess(arr, counter1),
+								Expression.Call(reader, "Read" + array.FieldType.GetElementType().Name, null, null)
+								),
+							Expression.PostIncrementAssign(counter1)
 						),
-						breakLabel
-					)
-				);
-
+						Expression.Break(breakLabel)
+					),
+					breakLabel
+				));
+			}
 			return block;
 		}
 
@@ -618,7 +649,7 @@ namespace Blue.GenericSerializer
 										Expression.LessThan(counter2, length2),
 										Expression.Block(
 											Expression.Assign(
-												Expression.ArrayAccess(arr, new[] { counter1, counter2 }),
+												Expression.ArrayAccess(arr, new List<Expression> { counter1, counter2 }),
 												Expression.Call(reader, "Read" + array.PropertyType.GetElementType().Name, null, null)
 											),
 											Expression.PostIncrementAssign(counter2)
@@ -638,8 +669,11 @@ namespace Blue.GenericSerializer
 					);
 			}
 			else if (ranks == 1)
+			{
+				var readSerializedLength = Expression.Call(reader, "ReadInt32", null, null);
 				block = Expression.Block(
 				new[] { counter1 },
+				Expression.Assign(arr, Expression.NewArrayBounds(array.PropertyType.GetElementType(), new[] { readSerializedLength })),
 				Expression.Loop(
 					Expression.IfThenElse(
 						Expression.LessThan(counter1, Expression.ArrayLength(arr)),
@@ -653,12 +687,12 @@ namespace Blue.GenericSerializer
 						Expression.Break(breakLabel)
 					),
 					breakLabel
-				)
-			);
-
+				));
+			}
 			return block;
 		}
 
+		//Writes 1 or 2 extra ints for array length.
 		private static Expression WriteArrayClass(FieldInfo array, Expression writer, Expression instance)
 		{
 			var arr = Expression.Field(instance, array);
@@ -686,16 +720,28 @@ namespace Blue.GenericSerializer
 
 			else if (ranks == 2)
 			{
+				//If the array value is null, assign to it using default constructor.
+				calls.Add(Expression.IfThen(
+					Expression.Equal(
+						Expression.ArrayAccess(arr, new List<Expression> { counter1, counter2 }), Expression.Constant(null)),
+						Expression.Assign(
+							Expression.ArrayAccess(arr, new List<Expression> { counter1, counter2 }),
+							Expression.New(array.FieldType.GetElementType())
+							)
+					));
+
 				//Simulate serializing the type of the array. i.e: Int, Vector3 etc
-				calls.AddRange(fields.Select((f, index) => GenerateWriteCalls(f, writer, Expression.ArrayAccess(arr, counter1, counter2))));
-				calls.AddRange(props.Select((p, index) => GenerateWriteCalls(p, writer, Expression.ArrayAccess(arr, counter1, counter2))));
+				calls.AddRange(fields.Select((f, index) => GenerateWriteCalls(f, writer, Expression.ArrayAccess(arr, new List<Expression> { counter1, counter2 }))));
+				calls.AddRange(props.Select((p, index) => GenerateWriteCalls(p, writer, Expression.ArrayAccess(arr, new List<Expression> { counter1, counter2 }))));
 
 				var length1 = Expression.Call(Expression.Field(instance, array), "GetLength", null, Expression.Constant(0));
 				var length2 = Expression.Call(Expression.Field(instance, array), "GetLength", null, Expression.Constant(1));
 
 				block = Expression.Block(
 					new[] { counter1, counter2, },
-					Expression.Loop(
+				Expression.Call(writer, "Write", null, length1),
+				Expression.Call(writer, "Write", null, length2),
+				Expression.Loop(
 						Expression.IfThenElse(
 							Expression.LessThan(counter1, length1),
 								Expression.Loop(
@@ -723,11 +769,14 @@ namespace Blue.GenericSerializer
 			}
 			else if (ranks == 1)
 			{
+				var length1 = Expression.Call(Expression.Field(instance, array), "GetLength", null, Expression.Constant(0));
+
 				calls.AddRange(fields.Select((f, index) => GenerateWriteCalls(f, writer, Expression.ArrayAccess(arr, counter1))));
 				calls.AddRange(props.Select((p, index) => GenerateWriteCalls(p, writer, Expression.ArrayAccess(arr, counter1))));
 
 				block = Expression.Block(
 				new[] { counter1 },
+				Expression.Call(writer, "Write", null, length1),
 				Expression.Loop(
 					Expression.IfThenElse(
 						Expression.LessThan(counter1, Expression.ArrayLength(arr)),
@@ -772,15 +821,28 @@ namespace Blue.GenericSerializer
 
 			else if (ranks == 2)
 			{
+				//If the array value is null, assign to it using default constructor.
+				calls.Add(Expression.IfThen(
+					Expression.Equal(
+						Expression.ArrayAccess(arr, new [] { counter1, counter2 }), Expression.Constant(null)),
+					//Then
+						Expression.Assign(
+							Expression.ArrayAccess(arr, new [] { counter1, counter2 }),
+							Expression.New(array.PropertyType.GetElementType())
+							)
+					));
+
 				//Simulate serializing the type of the array. i.e: Int, Vector3 etc
-				calls.AddRange(fields.Select((f, index) => GenerateWriteCalls(f, writer, Expression.ArrayAccess(arr, counter1, counter2))));
-				calls.AddRange(props.Select((p, index) => GenerateWriteCalls(p, writer, Expression.ArrayAccess(arr, counter1, counter2))));
+				calls.AddRange(fields.Select((f, index) => GenerateWriteCalls(f, writer, Expression.ArrayAccess(arr, new [] { counter1, counter2 }))));
+				calls.AddRange(props.Select((p, index) => GenerateWriteCalls(p, writer, Expression.ArrayAccess(arr, new [] { counter1, counter2 }))));
 
 				var length1 = Expression.Call(Expression.Property(instance, array), "GetLength", null, Expression.Constant(0));
 				var length2 = Expression.Call(Expression.Property(instance, array), "GetLength", null, Expression.Constant(1));
 
 				block = Expression.Block(
 					new[] { counter1, counter2, },
+					Expression.Call(writer, "Write", null, length1),
+					Expression.Call(writer, "Write", null, length2),
 					Expression.Loop(
 						Expression.IfThenElse(
 							Expression.LessThan(counter1, length1),
@@ -809,11 +871,14 @@ namespace Blue.GenericSerializer
 			}
 			else if (ranks == 1)
 			{
+				var length1 = Expression.Call(Expression.Property(instance, array), "GetLength", null, Expression.Constant(0));
+
 				calls.AddRange(fields.Select((f, index) => GenerateWriteCalls(f, writer, Expression.ArrayAccess(arr, counter1))));
 				calls.AddRange(props.Select((p, index) => GenerateWriteCalls(p, writer, Expression.ArrayAccess(arr, counter1))));
 
 				block = Expression.Block(
 				new[] { counter1 },
+				Expression.Call(writer, "Write", null, length1),
 				Expression.Loop(
 					Expression.IfThenElse(
 						Expression.LessThan(counter1, Expression.ArrayLength(arr)),
@@ -830,8 +895,8 @@ namespace Blue.GenericSerializer
 			}
 			return block;
 		}
-
-		private static Expression ReadArrayClass(FieldInfo array, Expression writer, Expression instance)
+		//Writes 1 or 2 extra ints for array length.
+		private static Expression ReadArrayClass(FieldInfo array, Expression reader, Expression instance)
 		{
 			var arr = Expression.Field(instance, array);
 			var counter1 = Expression.Variable(typeof(int), "counter1");
@@ -858,16 +923,29 @@ namespace Blue.GenericSerializer
 
 			else if (ranks == 2)
 			{
+				//If the array[x] value is null, assign to it using default constructor.
+				calls.Add(Expression.IfThen(
+					Expression.Equal(
+						Expression.ArrayAccess(arr, new List<Expression> { counter1, counter2 }), Expression.Constant(null)),
+						Expression.Assign(
+							Expression.ArrayAccess(arr, new List<Expression> { counter1, counter2 }),
+							Expression.New(array.FieldType.GetElementType())
+							)
+					));
+
 				//Simulate serializing the type of the array. i.e: Int, Vector3 etc
-				calls.AddRange(fields.Select((f, index) => GenerateReadCalls(f, writer, Expression.ArrayAccess(arr, counter1, counter2))));
-				calls.AddRange(props.Select((p, index) => GenerateReadCalls(p, writer, Expression.ArrayAccess(arr, counter1, counter2))));
+				calls.AddRange(fields.Select((f, index) => GenerateReadCalls(f, reader, Expression.ArrayAccess(arr, new List<Expression> { counter1, counter2 }))));
+				calls.AddRange(props.Select((p, index) => GenerateReadCalls(p, reader, Expression.ArrayAccess(arr, new List<Expression> { counter1, counter2 }))));
 
 				var length1 = Expression.Call(Expression.Field(instance, array), "GetLength", null, Expression.Constant(0));
 				var length2 = Expression.Call(Expression.Field(instance, array), "GetLength", null, Expression.Constant(1));
+				var readSerializedLength = Expression.Call(reader, "ReadInt32", null, null);
 
 				block = Expression.Block(
-					new[] { counter1, counter2, },
-					Expression.Loop(
+				new[] { counter1, counter2 },
+				//Re-assign the array, needs to check whether the array actually needs to be reassigned (compare old length to new length).
+				Expression.Assign(arr ,Expression.NewArrayBounds(array.FieldType.GetElementType(), new[] { readSerializedLength, readSerializedLength })),
+				Expression.Loop(
 						Expression.IfThenElse(
 							Expression.LessThan(counter1, length1),
 								Expression.Loop(
@@ -895,11 +973,23 @@ namespace Blue.GenericSerializer
 			}
 			else if (ranks == 1)
 			{
-				calls.AddRange(fields.Select((f, index) => GenerateReadCalls(f, writer, Expression.ArrayAccess(arr, counter1))));
-				calls.AddRange(props.Select((p, index) => GenerateReadCalls(p, writer, Expression.ArrayAccess(arr, counter1))));
+				//If the array[x] value is null, assign to it using default constructor.
+				calls.Add(Expression.IfThen(
+					Expression.Equal(
+						Expression.ArrayAccess(arr, new List<Expression> { counter1 }), Expression.Constant(null)),
+						Expression.Assign(
+							Expression.ArrayAccess(arr, new List<Expression> { counter1 }),
+							Expression.New(array.FieldType.GetElementType())
+							)
+					));
+
+				calls.AddRange(fields.Select((f, index) => GenerateReadCalls(f, reader, Expression.ArrayAccess(arr, counter1))));
+				calls.AddRange(props.Select((p, index) => GenerateReadCalls(p, reader, Expression.ArrayAccess(arr, counter1))));
+				var readSerializedLength = Expression.Call(reader, "ReadInt32", null, null);
 
 				block = Expression.Block(
 				new[] { counter1 },
+				Expression.Assign(arr, Expression.NewArrayBounds(array.FieldType.GetElementType(), new[] { readSerializedLength })),
 				Expression.Loop(
 					Expression.IfThenElse(
 						Expression.LessThan(counter1, Expression.ArrayLength(arr)),
@@ -917,7 +1007,7 @@ namespace Blue.GenericSerializer
 			return block;
 		}
 
-		private static Expression ReadArrayClass(PropertyInfo array, Expression writer, Expression instance)
+		private static Expression ReadArrayClass(PropertyInfo array, Expression reader, Expression instance)
 			{
 			var arr = Expression.Property(instance, array);
 			var counter1 = Expression.Variable(typeof(int), "counter1");
@@ -944,16 +1034,29 @@ namespace Blue.GenericSerializer
 
 			else if (ranks == 2)
 			{
+				//If the array value is null, assign to it using default constructor.
+				calls.Add(Expression.IfThen(
+					Expression.Equal(
+						Expression.ArrayAccess(arr, new List<Expression> { counter1, counter2 }), Expression.Constant(null)),
+						Expression.Assign(
+							Expression.ArrayAccess(arr, new List<Expression> { counter1, counter2 }),
+							Expression.New(array.PropertyType.GetElementType())
+							)
+					));
+
 				//Simulate serializing the type of the array. i.e: Int, Vector3 etc
-				calls.AddRange(fields.Select((f, index) => GenerateReadCalls(f, writer, Expression.ArrayAccess(arr, counter1, counter2))));
-				calls.AddRange(props.Select((p, index) => GenerateReadCalls(p, writer, Expression.ArrayAccess(arr, counter1, counter2))));
+				calls.AddRange(fields.Select((f, index) => GenerateReadCalls(f, reader, Expression.ArrayAccess(arr, new List<Expression> { counter1, counter2 }))));
+				calls.AddRange(props.Select((p, index) => GenerateReadCalls(p, reader, Expression.ArrayAccess(arr, new List<Expression> { counter1, counter2 }))));
+
 
 				var length1 = Expression.Call(Expression.Property(instance, array), "GetLength", null, Expression.Constant(0));
 				var length2 = Expression.Call(Expression.Property(instance, array), "GetLength", null, Expression.Constant(1));
+				var readSerializedLength = Expression.Call(reader, "ReadInt32", null, null);
 
 				block = Expression.Block(
-					new[] { counter1, counter2, },
-					Expression.Loop(
+				new[] { counter1, counter2 },
+				Expression.Assign(arr, Expression.NewArrayBounds(array.PropertyType.GetElementType(), new[] { readSerializedLength, readSerializedLength })),
+				Expression.Loop(
 						Expression.IfThenElse(
 							Expression.LessThan(counter1, length1),
 								Expression.Loop(
@@ -981,11 +1084,13 @@ namespace Blue.GenericSerializer
 			}
 			else if (ranks == 1)
 			{
-				calls.AddRange(fields.Select((f, index) => GenerateReadCalls(f, writer, Expression.ArrayAccess(arr, counter1))));
-				calls.AddRange(props.Select((p, index) => GenerateReadCalls(p, writer, Expression.ArrayAccess(arr, counter1))));
+				calls.AddRange(fields.Select((f, index) => GenerateReadCalls(f, reader, Expression.ArrayAccess(arr, counter1))));
+				calls.AddRange(props.Select((p, index) => GenerateReadCalls(p, reader, Expression.ArrayAccess(arr, counter1))));
+				var readSerializedLength = Expression.Call(reader, "ReadInt32", null, null);
 
 				block = Expression.Block(
 				new[] { counter1 },
+				Expression.Assign(arr, Expression.NewArrayBounds(array.PropertyType.GetElementType(), new[] { readSerializedLength })),
 				Expression.Loop(
 					Expression.IfThenElse(
 						Expression.LessThan(counter1, Expression.ArrayLength(arr)),

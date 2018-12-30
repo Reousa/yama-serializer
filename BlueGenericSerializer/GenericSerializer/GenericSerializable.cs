@@ -27,6 +27,7 @@ namespace Blue.GenericSerializer
 
 		/// <summary>
 		/// Member names to serialize, other members are ignored.
+		/// TODO: Throw an error when a member name is not found.
 		/// </summary>
 		public readonly string[] MemberNames;
 

@@ -9,6 +9,8 @@ namespace Blue.GenericSerializer
 {
 	public class GenericSerializer
 	{
+		static NLog.Logger Log = NLog.LogManager.GetCurrentClassLogger();
+
 		public static bool IsInitialized = false;
 
 		/// <summary>
@@ -22,6 +24,7 @@ namespace Blue.GenericSerializer
 
 			foreach (var sType in serializableTypes)
 			{
+				Log.Info("Creating serialization methods for: " + sType.Name);
 				//Can this use better naming?
 				FieldInfo serializeDelegate = sType.GetField("serialize", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
 				FieldInfo deserializeDelegate = sType.GetField("deserialize", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
@@ -37,6 +40,8 @@ namespace Blue.GenericSerializer
 
 				serializeDelegate.SetValue(null, createSerialize.Invoke(null, null));
 				deserializeDelegate.SetValue(null, createDeserialize.Invoke(null, null));
+
+				Log.Info("Finished: " + sType.Name);
 			}
 
 			IsInitialized = true;

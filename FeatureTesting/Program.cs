@@ -11,8 +11,12 @@ namespace FeatureTesting
 {
 	public class Vector2
 	{
-		public int x, y;
+		public float x, y;
+		public Vector3 test = new Vector3(3, 4, 5);
+		public Vector2()
+		{
 
+		}
 		public Vector2(int x, int y)
 		{
 			this.x = x;
@@ -30,6 +34,7 @@ namespace FeatureTesting
 			this.y = y;
 			this.z = z;
 		}
+		public Vector3() { }
 	}
 
 	[GenericSerializable(true, false, false)]
@@ -38,9 +43,11 @@ namespace FeatureTesting
 		public static Action<BinaryWriter, TestSerializable> serialize;
 		public static Action<BinaryReader, TestSerializable> deserialize;
 
+		public Vector2[] aaaaaarray = { };
+
 		public int[,] aaa2darray = { {1, 2}, {3, 4}, { 5, 6 }, { 7, 8 } };
 
-		public Vector2[,] a2dvecarray = { { new Vector2(1, 2), new Vector2(3, 4) } , { new Vector2(1, 2), new Vector2(3, 4) } };
+		public Vector2[,] a2dvecarray = { { } };// { { new Vector2(1, 2), new Vector2(3, 4) } , { new Vector2(1, 2), new Vector2(3, 4) } };
 		//public int[,,] aaamultiarray1 = { { { 1, 2, 3 } , { 1, 2, 3 }, { 1, 2, 3 } }, { { 3, 4, 4 }, { 3, 4, 4}, { 3, 4, 4 } }, { { 5, 6, 7 }, { 5, 6, 7 }, { 5, 6, 7 } }, };
 
 		public int[] array1 = new int[6] { 1, 2, 3, 4, 5, 6 };
@@ -250,12 +257,12 @@ namespace FeatureTesting
 			TestSerializable fieldTest = new TestSerializable();
 			TestSerializable randomValues = new TestSerializable();
 
-			//var ranks = fieldTest.aaamultiarray1.Rank;
+			randomValues.a2dvecarray = new Vector2[17, 40];
+			randomValues.aaaaaarray = new Vector2[10] { new Vector2(), new Vector2(), new Vector2(), new Vector2(), new Vector2(), new Vector2(), new Vector2(), new Vector2(), new Vector2(), new Vector2()};
 
-			//for(int i = 0; i < ranks; i++)
-			//{
-			//	var x = fieldTest.aaamultiarray1[i, i, i];
-			//}
+			for (int i = 0; i < 17; i++)
+				for (int l = 0; l < 40; l++)
+					randomValues.a2dvecarray[i,l] = new Vector2();
 
 			randomValues.GenerateRandomValues();
 
@@ -264,6 +271,8 @@ namespace FeatureTesting
 
 			fieldTest.Deserialize(br);
 			stream.Position = 0;
+
+			var x = fieldTest.a2dvecarray.Length;
 
 			Console.ReadKey();
 		}
