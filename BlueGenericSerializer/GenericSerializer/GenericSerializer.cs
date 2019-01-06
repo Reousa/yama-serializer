@@ -9,36 +9,46 @@ namespace Blue.GenericSerializer
 {
 	public class GenericSerializer
 	{
+		static NLog.Logger Log = NLog.LogManager.GetCurrentClassLogger();
+
 		public static bool IsInitialized = false;
 
 		/// <summary>
-		/// Generates all the Serialize/Deserialize methods for classes marked with [Blue.NetworkSerializable]
+		/// Generates all the Serialize/Deserialize methods for classes marked with [Blue.GenericSerializable]
 		/// </summary>
 		/// <returns></returns>
 		public static bool Initialize()
 		{
-			var serializableTypes = AppDomain.CurrentDomain.GetAssemblies().SelectMany(x => x.GetTypes())
-			.Where(x => x.IsDefined(typeof(GenericSerializable))).ToArray();
-
-			foreach (var sType in serializableTypes)
+			try
 			{
-				//Can this use better naming?
-				FieldInfo serializeDelegate = sType.GetField("serialize", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
-				FieldInfo deserializeDelegate = sType.GetField("deserialize", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+				var serializableTypes = AppDomain.CurrentDomain.GetAssemblies().SelectMany(x => x.GetTypes())
+				.Where(x => x.IsDefined(typeof(GenericSerializable))).ToArray();
 
-				if (serializeDelegate == null || deserializeDelegate == null)
-					throw new NotImplementedException(String.Format("Class `{0}` does not implement one of the Serialize or Deserialize delegates.", sType));
+				foreach (var sType in serializableTypes)
+				{
+					Log.Info("Creating serialization methods for: " + sType.Name);
+					//Can this use better naming?
+					FieldInfo serializeDelegate = sType.GetField("serialize", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+					FieldInfo deserializeDelegate = sType.GetField("deserialize", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
 
-				var writerType = serializeDelegate.FieldType.GenericTypeArguments.First();
-				var readerType = deserializeDelegate.FieldType.GenericTypeArguments.First();
+					if (serializeDelegate == null || deserializeDelegate == null)
+						throw new NotImplementedException(String.Format("Type `{0}` does not implement one of the Serialize or Deserialize delegates.", sType));
 
-				MethodInfo createSerialize = typeof(Blue.GenericSerializer.GenericSerializer).GetMethod("CreateSerialize", BindingFlags.NonPublic | BindingFlags.Static).MakeGenericMethod(writerType, sType);
-				MethodInfo createDeserialize = typeof(Blue.GenericSerializer.GenericSerializer).GetMethod("CreateDeserialize", BindingFlags.NonPublic | BindingFlags.Static).MakeGenericMethod(readerType, sType);
+					var writerType = serializeDelegate.FieldType.GenericTypeArguments.First();
+					var readerType = deserializeDelegate.FieldType.GenericTypeArguments.First();
 
-				serializeDelegate.SetValue(null, createSerialize.Invoke(null, null));
-				deserializeDelegate.SetValue(null, createDeserialize.Invoke(null, null));
+					MethodInfo createSerialize = typeof(Blue.GenericSerializer.GenericSerializer).GetMethod("CreateSerialize", BindingFlags.NonPublic | BindingFlags.Static).MakeGenericMethod(writerType, sType);
+					MethodInfo createDeserialize = typeof(Blue.GenericSerializer.GenericSerializer).GetMethod("CreateDeserialize", BindingFlags.NonPublic | BindingFlags.Static).MakeGenericMethod(readerType, sType);
+
+					serializeDelegate.SetValue(null, createSerialize.Invoke(null, null));
+					deserializeDelegate.SetValue(null, createDeserialize.Invoke(null, null));
+
+					Log.Info("Finished: " + sType.Name);
+				}
+			}catch(Exception e)
+			{
+				throw e;
 			}
-
 			IsInitialized = true;
 			return IsInitialized;
 		}
