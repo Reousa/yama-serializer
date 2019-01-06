@@ -211,6 +211,10 @@ namespace Blue.GenericSerializer
 				}
 				return Expression.Block(calls);
 			}
+			else if(type.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+			{
+				return WriteDictionary(field, writer, instance);
+			}
 			else
 				return Expression.Empty();
 		}
@@ -1176,6 +1180,7 @@ namespace Blue.GenericSerializer
 
 			var block = Expression.Block(
 				new[] { counter },
+				Expression.Call(writer, "Write", null, Expression.MakeMemberAccess(lst, count)),
 				Expression.Loop(
 					Expression.IfThenElse(
 						Expression.LessThan(counter, Expression.MakeMemberAccess(lst, count)),
@@ -1194,7 +1199,7 @@ namespace Blue.GenericSerializer
 
 		private static Expression WriteListPrimitive(PropertyInfo list, Expression writer, Expression instance)
 		{
-			var ls = Expression.Property(instance, list);
+			var lst = Expression.Property(instance, list);
 			var counter = Expression.Variable(typeof(int), "counter");
 			var breakLabel = Expression.Label("breakLabel");
 
@@ -1204,11 +1209,12 @@ namespace Blue.GenericSerializer
 
 			var block = Expression.Block(
 				new[] { counter },
+				Expression.Call(writer, "Write", null, Expression.MakeMemberAccess(lst, count)),
 				Expression.Loop(
 					Expression.IfThenElse(
-						Expression.LessThan(counter, Expression.MakeMemberAccess(ls, count)),
+						Expression.LessThan(counter, Expression.MakeMemberAccess(lst, count)),
 						Expression.Block(
-							Expression.Call(writer, "Write", null, Expression.Property(ls, "Item", counter)),
+							Expression.Call(writer, "Write", null, Expression.Property(lst, "Item", counter)),
 							Expression.PostIncrementAssign(counter)
 						),
 						Expression.Break(breakLabel)
@@ -1222,22 +1228,31 @@ namespace Blue.GenericSerializer
 
 		private static Expression ReadListPrimitive(FieldInfo list, Expression reader, Expression instance)
 		{
-			var ls = Expression.Field(instance, list);
+			var lst = Expression.Field(instance, list);
 			var counter = Expression.Variable(typeof(int), "counter");
+			var srlzCounter = Expression.Variable(typeof(int), "srCounter");
 			var breakLabel = Expression.Label("breakLabel");
 
 			Expression.Assign(counter, Expression.Constant(0));
 
 			MemberInfo count = list.FieldType.GetMember("Count")[0];
+			MethodInfo add = list.FieldType.GetMethod("Add");
 			var itemType = list.FieldType.GetGenericArguments()[0];
 
+			var readSerializedLength = Expression.Call(reader, "ReadInt32", null, null);
+
 			var block = Expression.Block(
-				new[] { counter },
+				new[] { srlzCounter, counter },
+				Expression.Assign(srlzCounter, readSerializedLength),
 				Expression.Loop(
 					Expression.IfThenElse(
-						Expression.LessThan(counter, Expression.MakeMemberAccess(ls, count)),
+						Expression.LessThan(counter, srlzCounter),
 						Expression.Block(
-							Expression.Assign(Expression.Property(ls, "Item", counter), Expression.Call(reader, "Read" + itemType.Name, null, null)),
+							Expression.IfThenElse(
+							Expression.LessThanOrEqual(Expression.MakeMemberAccess(lst, count), counter),
+							Expression.Call(lst, add, new[] { Expression.Call(reader, "Read" + itemType.Name, null, null) }),
+							Expression.Assign(Expression.Property(lst, "Item", counter), Expression.Call(reader, "Read" + itemType.Name, null, null))
+							),
 							Expression.PostIncrementAssign(counter)
 						),
 						Expression.Break(breakLabel)
@@ -1253,20 +1268,29 @@ namespace Blue.GenericSerializer
 		{
 			var ls = Expression.Property(instance, list);
 			var counter = Expression.Variable(typeof(int), "counter");
+			var srlzCounter = Expression.Variable(typeof(int), "srCounter");
 			var breakLabel = Expression.Label("breakLabel");
 
 			Expression.Assign(counter, Expression.Constant(0));
 
 			MemberInfo count = list.PropertyType.GetMember("Count")[0];
+			MethodInfo add = list.PropertyType.GetMethod("Add");
 			var itemType = list.PropertyType.GetGenericArguments()[0];
 
+			var readSerializedLength = Expression.Call(reader, "ReadInt32", null, null);
+
 			var block = Expression.Block(
-				new[] { counter },
+				new[] { srlzCounter, counter },
+				Expression.Assign(srlzCounter, readSerializedLength),
 				Expression.Loop(
 					Expression.IfThenElse(
-						Expression.LessThan(counter, Expression.MakeMemberAccess(ls, count)),
+						Expression.LessThan(counter, srlzCounter),
 						Expression.Block(
-							Expression.Assign(Expression.Property(ls, "Item", counter), Expression.Call(reader, "Read" + itemType.Name, null, null)),
+							Expression.IfThenElse(
+							Expression.LessThanOrEqual(Expression.MakeMemberAccess(ls, count), counter),
+							Expression.Call(ls, add, new[] { Expression.Call(reader, "Read" + itemType.Name, null, null) }),
+							Expression.Assign(Expression.Property(ls, "Item", counter), Expression.Call(reader, "Read" + itemType.Name, null, null))
+							),
 							Expression.PostIncrementAssign(counter)
 						),
 						Expression.Break(breakLabel)
@@ -1299,6 +1323,7 @@ namespace Blue.GenericSerializer
 
 			var block = Expression.Block(
 				new[] { counter },
+				Expression.Call(writer, "Write", null, Expression.MakeMemberAccess(lst, count)),
 				Expression.Loop(
 					Expression.IfThenElse(
 						Expression.LessThan(counter, Expression.MakeMemberAccess(lst, count)),
@@ -1338,6 +1363,7 @@ namespace Blue.GenericSerializer
 
 			var block = Expression.Block(
 				new[] { counter },
+				Expression.Call(writer, "Write", null, Expression.MakeMemberAccess(lst, count)),
 				Expression.Loop(
 					Expression.IfThenElse(
 						Expression.LessThan(counter, Expression.MakeMemberAccess(lst, count)),
@@ -1360,10 +1386,12 @@ namespace Blue.GenericSerializer
 		{
 			var lst = Expression.Field(instance, list);
 			var counter = Expression.Variable(typeof(int), "counter");
+			var srlzCounter = Expression.Variable(typeof(int), "srCounter");
 			var breakLabel = Expression.Label("breakLabel");
 
 			Expression.Assign(counter, Expression.Constant(0));
 			MemberInfo count = list.FieldType.GetMember("Count")[0];
+			MethodInfo add = list.FieldType.GetMethod("Add");
 
 			var attribute = (GenericSerializable)list.GetCustomAttribute(typeof(GenericSerializable));
 			var elementType = list.FieldType.GetGenericArguments()[0];
@@ -1375,15 +1403,20 @@ namespace Blue.GenericSerializer
 			calls.AddRange(fields.Select((f, index) => GenerateReadCalls(f, reader, Expression.Property(lst, "Item", counter))));
 			calls.AddRange(props.Select((p, index) => GenerateReadCalls(p, reader, Expression.Property(lst, "Item", counter))));
 
+			var readSerializedLength = Expression.Call(reader, "ReadInt32", null, null);
+
 			var block = Expression.Block(
-				new[] { counter },
+				new[] { srlzCounter, counter },
+				Expression.Assign(srlzCounter, readSerializedLength),
 				Expression.Loop(
 					Expression.IfThenElse(
-						Expression.LessThan(counter, Expression.MakeMemberAccess(lst, count)),
+						Expression.LessThan(counter, srlzCounter),
 						Expression.Block(
-							Expression.Block(
-								calls
+							Expression.IfThen(
+							Expression.LessThanOrEqual(Expression.MakeMemberAccess(lst, count), counter),
+							Expression.Call(lst, add, new[] { Expression.New(elementType) })
 							),
+							Expression.Block(calls),
 							Expression.PostIncrementAssign(counter)
 						),
 						Expression.Break(breakLabel)
@@ -1399,10 +1432,12 @@ namespace Blue.GenericSerializer
 		{
 			var lst = Expression.Property(instance, list);
 			var counter = Expression.Variable(typeof(int), "counter");
+			var srlzCounter = Expression.Variable(typeof(int), "srCounter");
 			var breakLabel = Expression.Label("breakLabel");
 
 			Expression.Assign(counter, Expression.Constant(0));
 			MemberInfo count = list.PropertyType.GetMember("Count")[0];
+			MethodInfo add = list.PropertyType.GetMethod("Add");
 
 			var attribute = (GenericSerializable)list.GetCustomAttribute(typeof(GenericSerializable));
 			var elementType = list.PropertyType.GetGenericArguments()[0];
@@ -1414,15 +1449,20 @@ namespace Blue.GenericSerializer
 			calls.AddRange(fields.Select((f, index) => GenerateReadCalls(f, reader, Expression.Property(lst, "Item", counter))));
 			calls.AddRange(props.Select((p, index) => GenerateReadCalls(p, reader, Expression.Property(lst, "Item", counter))));
 
+			var readSerializedLength = Expression.Call(reader, "ReadInt32", null, null);
+
 			var block = Expression.Block(
-				new[] { counter },
+				new[] { srlzCounter, counter },
+				Expression.Assign(srlzCounter, readSerializedLength),
 				Expression.Loop(
 					Expression.IfThenElse(
-						Expression.LessThan(counter, Expression.MakeMemberAccess(lst, count)),
+						Expression.LessThan(counter, srlzCounter),
 						Expression.Block(
-							Expression.Block(
-								calls
+							Expression.IfThen(
+							Expression.LessThanOrEqual(Expression.MakeMemberAccess(lst, count), counter),
+							Expression.Call(lst, add, new[] { Expression.New(elementType) })
 							),
+							Expression.Block(calls),
 							Expression.PostIncrementAssign(counter)
 						),
 						Expression.Break(breakLabel)
@@ -1432,6 +1472,36 @@ namespace Blue.GenericSerializer
 			);
 
 			return block;
+		}
+
+		#endregion
+
+		#region DICTIONARY
+
+		public static Expression WriteDictionary(FieldInfo list, Expression writer, Expression instance)
+		{
+			var itemType = list.FieldType.GetGenericArguments()[0];
+			if (itemType.IsPrimitive || itemType == typeof(decimal) || itemType == typeof(string))
+				return WriteListPrimitive(list, writer, instance);
+
+			else if (itemType.IsClass && !itemType.IsArray && !itemType.IsEnum)
+				return WriteListClass(list, writer, instance);
+
+			else
+				return Expression.Empty();
+		}
+
+		public static Expression ReadDictionary(FieldInfo list, Expression reader, Expression instance)
+		{
+			var itemType = list.FieldType.GetGenericArguments()[0];
+			if (itemType.IsPrimitive || itemType == typeof(decimal) || itemType == typeof(string))
+				return ReadListPrimitive(list, reader, instance);
+
+			else if (itemType.IsClass && !itemType.IsArray && !itemType.IsEnum)
+				return ReadListClass(list, reader, instance);
+
+			else
+				return Expression.Empty();
 		}
 
 		#endregion
