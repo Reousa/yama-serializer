@@ -57,7 +57,7 @@ You may contribute through issues & pull requests. (WIP)
 
 ## Authors
 
-* **[Karim H. Rizk](https://github.com/Reousa)** - *Idea & implementation*
+* **[Karim H. Rizk](https://github.com/Reousa)**
 
 ## License
 
@@ -65,5 +65,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Acknowledgments
 
-- I would specifically like to thank [Michael Kelly](https://github.com/Michael-Kelley) for being the amazing friend & mentor that he is.
-- Thanks to Google, Stackoverflow, Brilliant.org & the various book authors who've made knowledge & self-teaching accessible in the recent years.
+- I would specifically like to thank Michael Kelly for being the amazing friend & mentor that he is.
+- Shout out to the various authors who've made knowledge & self-teaching accessible in the recent years.
