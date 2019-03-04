@@ -4,6 +4,7 @@ using System.Linq.Expressions;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Collections;
 
 namespace Blue.GenericSerializer
 {
@@ -192,6 +193,10 @@ namespace Blue.GenericSerializer
 			{
 				return WriteArray(field, writer, instance);
 			}
+			else if (type.GetInterfaces().Contains(typeof(System.Collections.IDictionary)) && type.GetGenericTypeDefinition() == typeof(Dictionary<,>) )
+			{
+				return WriteDictionary(field, writer, instance);
+			}
 			else if (type.GetInterfaces().Contains(typeof(System.Collections.IList)) && type.GetGenericTypeDefinition().IsAssignableFrom(typeof(List<>)))
 			{
 				return WriteList(field, writer, instance);
@@ -211,10 +216,6 @@ namespace Blue.GenericSerializer
 				}
 				return Expression.Block(calls);
 			}
-			else if(type.GetGenericTypeDefinition() == typeof(Dictionary<,>))
-			{
-				return WriteDictionary(field, writer, instance);
-			}
 			else
 				return Expression.Empty();
 		}
@@ -231,6 +232,10 @@ namespace Blue.GenericSerializer
 			else if (type.IsArray && type.GetElementType() != null)
 			{
 				return WriteArray(prop, writer, instance);
+			}
+			else if (type.GetInterfaces().Contains(typeof(System.Collections.IDictionary)) && type.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+			{
+				return WriteDictionary(prop, writer, instance);
 			}
 			else if (type.GetInterfaces().Contains(typeof(System.Collections.IList)) && type.GetGenericTypeDefinition().IsAssignableFrom(typeof(List<>)))
 			{
@@ -278,6 +283,10 @@ namespace Blue.GenericSerializer
 			{
 				return ReadArray(field, reader, instance);
 			}
+			else if (type.GetInterfaces().Contains(typeof(System.Collections.IDictionary)) && type.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+			{
+				return ReadDictionary(field, reader, instance);
+			}
 			else if (type.GetInterfaces().Contains(typeof(System.Collections.IList)) && type.GetGenericTypeDefinition().IsAssignableFrom(typeof(List<>)))
 			{
 				return ReadList(field, reader, instance);
@@ -317,6 +326,10 @@ namespace Blue.GenericSerializer
 			else if (type.IsArray && type.GetElementType() != null)
 			{
 				return ReadArray(prop, reader, instance);
+			}
+			else if (type.GetInterfaces().Contains(typeof(System.Collections.IDictionary)) && type.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+			{
+				return ReadDictionary(prop, reader, instance);
 			}
 			else if (type.GetInterfaces().Contains(typeof(System.Collections.IList)) && type.GetGenericTypeDefinition().IsAssignableFrom(typeof(List<>)))
 			{
@@ -1478,30 +1491,308 @@ namespace Blue.GenericSerializer
 
 		#region DICTIONARY
 
-		public static Expression WriteDictionary(FieldInfo list, Expression writer, Expression instance)
+		public static Expression WriteDictionary(FieldInfo dict, Expression writer, Expression instance)
 		{
-			var itemType = list.FieldType.GetGenericArguments()[0];
-			if (itemType.IsPrimitive || itemType == typeof(decimal) || itemType == typeof(string))
-				return WriteListPrimitive(list, writer, instance);
+			var keyType = dict.FieldType.GetGenericArguments()[0];
+			if(!keyType.IsPrimitive && keyType != typeof(decimal) && keyType != typeof(string))
+				throw new NotImplementedException("Only primitive dictionary keys are currently supported.");
 
-			else if (itemType.IsClass && !itemType.IsArray && !itemType.IsEnum)
-				return WriteListClass(list, writer, instance);
+			var valType = dict.FieldType.GetGenericArguments()[1];
+			//Just to make sure it's not an enum/array. Needs work.
+			if (!valType.IsArray && !valType.IsEnum)
+				return WriteDictionaryAny(dict, writer, instance);
 
 			else
-				return Expression.Empty();
+				throw new NotImplementedException("Your current Dictionary implementation is not supported.");
 		}
 
-		public static Expression ReadDictionary(FieldInfo list, Expression reader, Expression instance)
+		public static Expression WriteDictionary(PropertyInfo dict, Expression writer, Expression instance)
 		{
-			var itemType = list.FieldType.GetGenericArguments()[0];
-			if (itemType.IsPrimitive || itemType == typeof(decimal) || itemType == typeof(string))
-				return ReadListPrimitive(list, reader, instance);
+			var keyType = dict.PropertyType.GetGenericArguments()[0];
+			if (!keyType.IsPrimitive && keyType != typeof(decimal) && keyType != typeof(string))
+				throw new NotImplementedException("Only primitive dictionary keys are currently supported.");
 
-			else if (itemType.IsClass && !itemType.IsArray && !itemType.IsEnum)
-				return ReadListClass(list, reader, instance);
+			var valType = dict.PropertyType.GetGenericArguments()[1];
+			//Just to make sure it's not an enum/array. Needs work.
+			if (!valType.IsArray && !valType.IsEnum)
+				return WriteDictionaryAny(dict, writer, instance);
 
 			else
-				return Expression.Empty();
+				throw new NotImplementedException("Your current Dictionary implementation is not supported.");
+		}
+
+		public static Expression ReadDictionary(FieldInfo dict, Expression reader, Expression instance)
+		{
+			var keyType = dict.FieldType.GetGenericArguments()[0];
+			if (!keyType.IsPrimitive && keyType != typeof(decimal) && keyType != typeof(string))
+				throw new NotImplementedException("Only primitive dictionary keys are currently supported.");
+
+			var valType = dict.FieldType.GetGenericArguments()[1];
+			//Just to make sure it's not an enum/array. Needs work.
+			if (!valType.IsArray && !valType.IsEnum)
+				return ReadDictionaryAny(dict, reader, instance);
+
+			else
+				throw new NotImplementedException("Your current Dictionary implementation is not supported.");
+		}
+
+		public static Expression ReadDictionary(PropertyInfo dict, Expression reader, Expression instance)
+		{
+			var keyType = dict.PropertyType.GetGenericArguments()[0];
+			if (!keyType.IsPrimitive && keyType != typeof(decimal) && keyType != typeof(string))
+				throw new NotImplementedException("Only primitive dictionary keys are currently supported.");
+
+			var valType = dict.PropertyType.GetGenericArguments()[1];
+			//Just to make sure it's not an enum/array. Needs work.
+			if (!valType.IsArray && !valType.IsEnum)
+				return ReadDictionaryAny(dict, reader, instance);
+
+			else
+				throw new NotImplementedException("Your current Dictionary implementation is not supported.");
+		}
+
+		private static Expression WriteDictionaryAny(FieldInfo dict, Expression writer, Expression instance)
+		{
+			var dictInstance = Expression.Field(instance, dict);
+			var dictType = dict.FieldType;
+			var keyType = dict.FieldType.GetGenericArguments()[0];
+			var valType = dict.FieldType.GetGenericArguments()[1];
+			var count = Expression.PropertyOrField(dictInstance, "Count");
+
+			var enumeratorType = dictType.GetMethod("GetEnumerator").ReturnType;
+
+			var enumeratorVar = Expression.Variable(enumeratorType, "enumerator");
+			var getEnumeratorCall = Expression.Call(dictInstance, dictType.GetMethod("GetEnumerator"));
+			var moveNextCall = Expression.Call(enumeratorVar, typeof(IEnumerator).GetMethod("MoveNext"));
+
+			var currentEnumeratorValue = Expression.PropertyOrField(enumeratorVar, "Current");
+			var currentKey = Expression.PropertyOrField(currentEnumeratorValue, "Key");
+			var currentValue = Expression.PropertyOrField(currentEnumeratorValue, "Value");
+
+			var breakLabel = Expression.Label("breakLabel");
+
+
+			List<Expression> calls = new List<Expression>();
+			calls.Add(Expression.Call(writer, "Write", null, currentKey));
+			var attribute = (GenericSerializable)dict.GetCustomAttribute(typeof(GenericSerializable));
+
+			if (valType.IsPrimitive || valType == typeof(decimal) || valType == typeof(string))
+			{
+				calls.Add(Expression.Call(writer, "Write", null, currentValue));
+			}
+			else
+			{
+				var fields = GetFields(valType, attribute);
+				var props = GetProperties(valType, attribute);
+
+				calls.AddRange(fields.Select((f, index) => GenerateWriteCalls(f, writer, currentValue)));
+				calls.AddRange(props.Select((p, index) => GenerateWriteCalls(p, writer, currentValue)));
+			}
+
+			var block = Expression.Block(new[] { enumeratorVar },
+				Expression.Call(writer, "Write", null, count),
+				Expression.Assign(enumeratorVar, getEnumeratorCall),
+				Expression.Loop(
+					Expression.IfThenElse(
+						Expression.Equal(moveNextCall, Expression.Constant(true)),
+						Expression.Block(
+							calls
+						),
+						Expression.Break(breakLabel)
+					),
+				breakLabel)
+			);
+
+			return block;
+		}
+
+		private static Expression WriteDictionaryAny(PropertyInfo dict, Expression writer, Expression instance)
+		{
+			var dictInstance = Expression.Property(instance, dict);
+			var dictType = dict.PropertyType;
+			var keyType = dict.PropertyType.GetGenericArguments()[0];
+			var valType = dict.PropertyType.GetGenericArguments()[1];
+			var count = Expression.PropertyOrField(dictInstance, "Count");
+
+			var enumeratorType = dictType.GetMethod("GetEnumerator").ReturnType;
+
+			var enumeratorVar = Expression.Variable(enumeratorType, "enumerator");
+			var getEnumeratorCall = Expression.Call(dictInstance, dictType.GetMethod("GetEnumerator"));
+			var moveNextCall = Expression.Call(enumeratorVar, typeof(IEnumerator).GetMethod("MoveNext"));
+
+			var currentEnumeratorValue = Expression.PropertyOrField(enumeratorVar, "Current");
+			var currentKey = Expression.PropertyOrField(currentEnumeratorValue, "Key");
+			var currentValue = Expression.PropertyOrField(currentEnumeratorValue, "Value");
+
+			var breakLabel = Expression.Label("breakLabel");
+
+
+			List<Expression> calls = new List<Expression>();
+			calls.Add(Expression.Call(writer, "Write", null, currentKey));
+			var attribute = (GenericSerializable)dict.GetCustomAttribute(typeof(GenericSerializable));
+
+			if (valType.IsPrimitive || valType == typeof(decimal) || valType == typeof(string))
+			{
+				calls.Add(Expression.Call(writer, "Write", null, currentValue));
+			}
+			else
+			{
+				var fields = GetFields(valType, attribute);
+				var props = GetProperties(valType, attribute);
+
+				calls.AddRange(fields.Select((f, index) => GenerateWriteCalls(f, writer, currentValue)));
+				calls.AddRange(props.Select((p, index) => GenerateWriteCalls(p, writer, currentValue)));
+			}
+
+			var block = Expression.Block(new[] { enumeratorVar },
+				Expression.Call(writer, "Write", null, count),
+				Expression.Assign(enumeratorVar, getEnumeratorCall),
+				Expression.Loop(
+					Expression.IfThenElse(
+						Expression.Equal(moveNextCall, Expression.Constant(true)),
+						Expression.Block(
+							calls
+						),
+						Expression.Break(breakLabel)
+					),
+				breakLabel)
+			);
+
+			return block;
+		}
+
+		private static Expression ReadDictionaryAny(FieldInfo dict, Expression reader, Expression instance)
+		{
+			var counter = Expression.Parameter(typeof(int), "counter");
+			var srlzCounter = Expression.Parameter(typeof(int), "srlzCounter");
+
+			var dictInstance = Expression.Field(instance, dict);
+			var dictType = dict.FieldType;
+			var keyType = dict.FieldType.GetGenericArguments()[0];
+			var valType = dict.FieldType.GetGenericArguments()[1];
+			var currentKey = Expression.Variable(keyType, "currentKey");
+
+			var breakLabel = Expression.Label("breakLabel");
+
+			var indexer = Expression.Property(dictInstance, "Item", currentKey);
+
+			List<Expression> readCalls = new List<Expression>();
+			var attribute = (GenericSerializable)dict.GetCustomAttribute(typeof(GenericSerializable));
+
+			if (valType.IsPrimitive || valType == typeof(decimal) || valType == typeof(string))
+			{
+				readCalls.Add(
+					Expression.Assign(
+						indexer, Expression.Call(reader, "Read" + valType.Name, null, null)
+						));
+			}
+			else
+			{
+				var fields = GetFields(valType, attribute);
+				var props = GetProperties(valType, attribute);
+
+				readCalls.AddRange(fields.Select((f, index) => GenerateReadCalls(f, reader, indexer)));
+				readCalls.AddRange(props.Select((p, index) => GenerateReadCalls(p, reader, indexer)));
+			}
+
+			MethodInfo dictAdd = dictType.GetMethod("Add");
+			MethodInfo dictContainsKey = dictType.GetMethod("ContainsKey");
+
+			var readNextKey = Expression.Call(reader, "Read" + keyType.Name, null, null);
+
+			var containsKey = Expression.Call(dictInstance, dictContainsKey, new[] { currentKey });
+
+			var addNewItemIfNull = Expression.Block(
+				Expression.IfThen(
+					Expression.Equal(containsKey, Expression.Constant(false)),
+					Expression.Call(dictInstance, dictAdd, new Expression[] { currentKey, Expression.New(valType) })
+				));
+
+			var block = Expression.Block(new[] {counter, srlzCounter, currentKey },
+				Expression.Assign(counter, Expression.Constant(0)),
+				Expression.Assign(srlzCounter, Expression.Call(reader, "ReadInt32", null, null)),
+				Expression.Loop(
+					Expression.IfThenElse(
+						Expression.LessThan(counter, srlzCounter),
+						Expression.Block(
+							Expression.Assign(currentKey, readNextKey),
+							addNewItemIfNull,
+							Expression.Block(readCalls),
+							Expression.PostIncrementAssign(counter)
+						),
+						Expression.Break(breakLabel)
+					),
+				breakLabel)
+			);
+
+			return block;
+		}
+
+		private static Expression ReadDictionaryAny(PropertyInfo dict, Expression reader, Expression instance)
+		{
+			var counter = Expression.Parameter(typeof(int), "counter");
+			var srlzCounter = Expression.Parameter(typeof(int), "srlzCounter");
+
+			var dictInstance = Expression.Property(instance, dict);
+			var dictType = dict.PropertyType;
+			var keyType = dict.PropertyType.GetGenericArguments()[0];
+			var valType = dict.PropertyType.GetGenericArguments()[1];
+			var currentKey = Expression.Variable(keyType, "currentKey");
+
+			var breakLabel = Expression.Label("breakLabel");
+
+			var indexer = Expression.Property(dictInstance, "Item", currentKey);
+
+			List<Expression> readCalls = new List<Expression>();
+			var attribute = (GenericSerializable)dict.GetCustomAttribute(typeof(GenericSerializable));
+
+			if (valType.IsPrimitive || valType == typeof(decimal) || valType == typeof(string))
+			{
+				readCalls.Add(
+					Expression.Assign(
+						indexer, Expression.Call(reader, "Read" + valType.Name, null, null)
+						));
+			}
+			else
+			{
+				var fields = GetFields(valType, attribute);
+				var props = GetProperties(valType, attribute);
+
+				readCalls.AddRange(fields.Select((f, index) => GenerateReadCalls(f, reader, indexer)));
+				readCalls.AddRange(props.Select((p, index) => GenerateReadCalls(p, reader, indexer)));
+			}
+
+			MethodInfo dictAdd = dictType.GetMethod("Add");
+			MethodInfo dictContainsKey = dictType.GetMethod("ContainsKey");
+
+			var readNextKey = Expression.Call(reader, "Read" + keyType.Name, null, null);
+
+			var containsKey = Expression.Call(dictInstance, dictContainsKey, new[] { currentKey });
+
+			var addNewItemIfNull = Expression.Block(
+				Expression.IfThen(
+					Expression.Equal(containsKey, Expression.Constant(false)),
+					Expression.Call(dictInstance, dictAdd, new Expression[] { currentKey, Expression.New(valType) })
+				));
+
+			var block = Expression.Block(new[] { counter, srlzCounter, currentKey },
+				Expression.Assign(counter, Expression.Constant(0)),
+				Expression.Assign(srlzCounter, Expression.Call(reader, "ReadInt32", null, null)),
+				Expression.Loop(
+					Expression.IfThenElse(
+						Expression.LessThan(counter, srlzCounter),
+						Expression.Block(
+							Expression.Assign(currentKey, readNextKey),
+							addNewItemIfNull,
+							Expression.Block(readCalls),
+							Expression.PostIncrementAssign(counter)
+						),
+						Expression.Break(breakLabel)
+					),
+				breakLabel)
+			);
+
+			return block;
 		}
 
 		#endregion
