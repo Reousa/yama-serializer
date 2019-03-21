@@ -7,7 +7,7 @@ The goal is to eliminate the possibility of human error & to boost productivity 
 
 It is built using C#'s `System.Linq.Expression` & `Sytem.Reflection` libraries, is AOT and .NET Standard 2.0 compliant.
 
-*Disclaimer: This is still work in progress, it is considered to be in a `PRE-ALPHA` state. Some core features may not yet exist or be broken.*
+*Disclaimer: This is still work in progress, it is considered to be in a `PRE-ALPHA` state. Some core features may not yet exist or be broken. It may be completely rewritten, repurposed or rescoped. Not for production use.*
 
 ## Core Feature List
 
@@ -65,5 +65,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Acknowledgments
 
-- I would specifically like to thank Michael Kelly for being the amazing friend & mentor that he is.
-- Shout out to the various authors who've made knowledge & self-teaching accessible in the recent years.
+- The code is very bad as it currently stands, work in progress.
+- The scope is still not fully decided.
