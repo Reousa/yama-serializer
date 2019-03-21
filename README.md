@@ -63,7 +63,7 @@ You may contribute through issues & pull requests. (WIP)
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
 
-## Acknowledgments
+## 
 
 - The code is very bad as it currently stands, work in progress.
 - The scope is still not fully decided.
