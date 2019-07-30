@@ -32,9 +32,9 @@ namespace Blue.GenericSerializer
 			else if (!gsAttribute.DefaultOptions)
 				return objectType.GetFields(gsAttribute.Flags)
 					.OrderBy(f => f.Name).ToArray();
-
+			//Get all fields marked with [GenericSerializable]
 			else
-				return objectType.GetFields()
+				return objectType.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)
 					.Where(f => f.IsDefined(typeof(GenericSerializable)))
 					.OrderBy(f => f.Name).ToArray();
 		}
@@ -60,7 +60,7 @@ namespace Blue.GenericSerializer
 					.OrderBy(f => f.Name).ToArray();
 
 			else
-				return field.FieldType.GetFields()
+				return field.FieldType.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)
 					.Where(f => f.IsDefined(typeof(GenericSerializable)))
 					.OrderBy(f => f.Name).ToArray();
 		}
@@ -87,7 +87,7 @@ namespace Blue.GenericSerializer
 					.OrderBy(f => f.Name).ToArray();
 
 			else
-				return prop.PropertyType.GetFields()
+				return prop.PropertyType.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)
 					.Where(f => f.IsDefined(typeof(GenericSerializable)))
 					.OrderBy(f => f.Name).ToArray();
 		}
@@ -114,7 +114,7 @@ namespace Blue.GenericSerializer
 					.OrderBy(p => p.Name).ToArray();
 
 			else
-				return objectType.GetProperties()
+				return objectType.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)
 					.Where(p => p.IsDefined(typeof(GenericSerializable)))
 					.OrderBy(p => p.Name).ToArray();
 		}
@@ -141,7 +141,7 @@ namespace Blue.GenericSerializer
 					.OrderBy(p => p.Name).ToArray();
 
 			else
-				return field.FieldType.GetProperties().
+				return field.FieldType.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static).
 					Where(p => p.IsDefined(typeof(GenericSerializable))).
 					OrderBy(p => p.Name).ToArray();
 		}
@@ -168,7 +168,7 @@ namespace Blue.GenericSerializer
 					.OrderBy(p => p.Name).ToArray();
 
 			else
-				return prop.PropertyType.GetProperties().
+				return prop.PropertyType.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static).
 					Where(p => p.IsDefined(typeof(GenericSerializable))).
 					OrderBy(p => p.Name).ToArray();
 		}
