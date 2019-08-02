@@ -7,7 +7,7 @@ The goal is to eliminate the possibility of human error & to boost productivity 
 
 It is built using C#'s `System.Linq.Expression` & `Sytem.Reflection` libraries, is AOT and .NET Standard 2.0 compliant.
 
-*Disclaimer: This is still work in progress, it is considered to be in a `PRE-ALPHA` state. Some core features may not yet exist or be broken.*
+*Disclaimer: This is still work in progress, it is considered to be in a `PRE-ALPHA` state. Some core features may not yet exist or be broken. It's schedueled to be completely rewritten, & rescoped. Not for production use.*
 
 ## Core Feature List
 
@@ -55,15 +55,12 @@ You may contribute through issues & pull requests. (WIP)
 
 [SemVer](http://semver.org/). (WIP)
 
-## Authors
-
-* **[Karim H. Rizk](https://github.com/Reousa)**
-
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
 
-## Acknowledgments
+## 
 
-- I would specifically like to thank Michael Kelly for being the amazing friend & mentor that he is.
-- Shout out to the various authors who've made knowledge & self-teaching accessible in the recent years.
+- The code is to be rewritten.
+- The scope is still not fully decided, primitive types will remain in scope, however.
+- Backwards compatibility for the attributes & general usage aside from #17 will remain intact.
