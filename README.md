@@ -1,4 +1,9 @@
-# Blue's Generic Serializer
+### IMPORTANT
+
+This project has fallen out of favor, as there are already other serializers that do the same if not better, now.
+This project is hence no-longer scheduled to be supported.
+
+# Yama Serializer
 
 A general purpose automatic data serializer that performs just as fast as manual serialization, at the expense of initial load time.
 It is made with `Game Networking` as the main use case, but can be used for other things as well.
@@ -7,7 +12,7 @@ The goal is to eliminate the possibility of human error & to boost productivity 
 
 It is built using C#'s `System.Linq.Expression` & `Sytem.Reflection` libraries, is AOT and .NET Standard 2.0 compliant.
 
-*Disclaimer: This is still work in progress, it is considered to be in a `PRE-ALPHA` state. Some core features may not yet exist or be broken. It's schedueled to be completely rewritten, & rescoped. Not for production use.*
+*Disclaimer: This is still work in progress, it is considered to be in a `PRE-ALPHA` state. Some core features may not yet exist or be broken. It's schedueled to be completely rewritten, fully breaking backwards compatibility. It's stable enough for production use, but I'd wait a while.*
 
 ## Core Feature List
 
@@ -33,9 +38,9 @@ It is built using C#'s `System.Linq.Expression` & `Sytem.Reflection` libraries, 
 2. Build `BlueGenericSerializer` or reference it in your project directly.
 3. Add the attribute `[GenericSerializable(options)]` to your serializable class.
 4. Add the following delegates to your class:
-	1. `public static Action<WriterType, ClassType> serialize;` [#17](https://github.com/Reousa/BlueGenericSerializer/issues/17)
-	2. `public static Action<ReaderType, ClassType> deserialize;` [#17](https://github.com/Reousa/BlueGenericSerializer/issues/17)
-5. Call `GenericSerializer.Initialize();`.
+	1. `public static Action<WriterType, ClassType> serialize;`
+	2. `public static Action<ReaderType, ClassType> deserialize;`
+5. Call `GenericSerializer.Initialize();` at program startup.
 6. Call `ClassType.serialize(WriterInstance, ClassTypeInstance);` to serialize.
 7. Done!
 
@@ -59,8 +64,6 @@ You may contribute through issues & pull requests. (WIP)
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
 
-## 
+## Notes
 
-- The code is to be rewritten.
-- The scope is still not fully decided, primitive types will remain in scope, however.
-- Backwards compatibility for the attributes & general usage aside from #17 will remain intact.
+- Whilst this is fairly stable, it's not production ready if you don't know what you're doing.
